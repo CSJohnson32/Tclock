@@ -17,6 +17,16 @@
 		11F5070123D957DA00E62A52 /* TimesheetsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F5070023D957DA00E62A52 /* TimesheetsViewController.swift */; };
 		11F5070323D958CA00E62A52 /* ScheduleViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F5070223D958CA00E62A52 /* ScheduleViewController.swift */; };
 		11F5070523D958E800E62A52 /* MoreTabViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F5070423D958E800E62A52 /* MoreTabViewController.swift */; };
+		AA000002DEADBEEF00000001 /* DataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001DEADBEEF00000001 /* DataManager.swift */; };
+		AA000004DEADBEEF00000001 /* Project+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000003DEADBEEF00000001 /* Project+CoreDataClass.swift */; };
+		AA000006DEADBEEF00000001 /* Project+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000005DEADBEEF00000001 /* Project+CoreDataProperties.swift */; };
+		AA000008DEADBEEF00000001 /* TimeEntry+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000007DEADBEEF00000001 /* TimeEntry+CoreDataClass.swift */; };
+		AA000010DEADBEEF00000001 /* TimeEntry+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000009DEADBEEF00000001 /* TimeEntry+CoreDataProperties.swift */; };
+		AA000012DEADBEEF00000001 /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000011DEADBEEF00000001 /* Utilities.swift */; };
+		AA000014DEADBEEF00000001 /* ProjectTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000013DEADBEEF00000001 /* ProjectTableViewCell.swift */; };
+		AA000016DEADBEEF00000001 /* TimeEntryTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000015DEADBEEF00000001 /* TimeEntryTableViewCell.swift */; };
+		AA000018DEADBEEF00000001 /* EditTimeEntryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000017DEADBEEF00000001 /* EditTimeEntryViewController.swift */; };
+		AA000020DEADBEEF00000001 /* Tclock.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = AA000019DEADBEEF00000001 /* Tclock.xcdatamodeld */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +42,16 @@
 		11F5070023D957DA00E62A52 /* TimesheetsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimesheetsViewController.swift; sourceTree = SOURCE_ROOT; };
 		11F5070223D958CA00E62A52 /* ScheduleViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleViewController.swift; sourceTree = SOURCE_ROOT; };
 		11F5070423D958E800E62A52 /* MoreTabViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreTabViewController.swift; sourceTree = SOURCE_ROOT; };
+		AA000001DEADBEEF00000001 /* DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = "<group>"; };
+		AA000003DEADBEEF00000001 /* Project+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Project+CoreDataClass.swift"; sourceTree = "<group>"; };
+		AA000005DEADBEEF00000001 /* Project+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Project+CoreDataProperties.swift"; sourceTree = "<group>"; };
+		AA000007DEADBEEF00000001 /* TimeEntry+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TimeEntry+CoreDataClass.swift"; sourceTree = "<group>"; };
+		AA000009DEADBEEF00000001 /* TimeEntry+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TimeEntry+CoreDataProperties.swift"; sourceTree = "<group>"; };
+		AA000011DEADBEEF00000001 /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
+		AA000013DEADBEEF00000001 /* ProjectTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectTableViewCell.swift; sourceTree = "<group>"; };
+		AA000015DEADBEEF00000001 /* TimeEntryTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeEntryTableViewCell.swift; sourceTree = "<group>"; };
+		AA000017DEADBEEF00000001 /* EditTimeEntryViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditTimeEntryViewController.swift; sourceTree = "<group>"; };
+		AA000019DEADBEEF00000001 /* Tclock.xcdatamodeld */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodeld; path = Tclock.xcdatamodeld; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -71,6 +91,16 @@
 				11F5070023D957DA00E62A52 /* TimesheetsViewController.swift */,
 				11F5070223D958CA00E62A52 /* ScheduleViewController.swift */,
 				11F5070423D958E800E62A52 /* MoreTabViewController.swift */,
+				AA000017DEADBEEF00000001 /* EditTimeEntryViewController.swift */,
+				AA000001DEADBEEF00000001 /* DataManager.swift */,
+				AA000003DEADBEEF00000001 /* Project+CoreDataClass.swift */,
+				AA000005DEADBEEF00000001 /* Project+CoreDataProperties.swift */,
+				AA000007DEADBEEF00000001 /* TimeEntry+CoreDataClass.swift */,
+				AA000009DEADBEEF00000001 /* TimeEntry+CoreDataProperties.swift */,
+				AA000011DEADBEEF00000001 /* Utilities.swift */,
+				AA000013DEADBEEF00000001 /* ProjectTableViewCell.swift */,
+				AA000015DEADBEEF00000001 /* TimeEntryTableViewCell.swift */,
+				AA000019DEADBEEF00000001 /* Tclock.xcdatamodeld */,
 				11F506F223D944A100E62A52 /* Main.storyboard */,
 				11F506F523D944A300E62A52 /* Assets.xcassets */,
 				11F506F723D944A300E62A52 /* LaunchScreen.storyboard */,
@@ -157,6 +187,16 @@
 				11F5070323D958CA00E62A52 /* ScheduleViewController.swift in Sources */,
 				11F506EB23D944A100E62A52 /* AppDelegate.swift in Sources */,
 				11F506ED23D944A100E62A52 /* SceneDelegate.swift in Sources */,
+				AA000002DEADBEEF00000001 /* DataManager.swift in Sources */,
+				AA000004DEADBEEF00000001 /* Project+CoreDataClass.swift in Sources */,
+				AA000006DEADBEEF00000001 /* Project+CoreDataProperties.swift in Sources */,
+				AA000008DEADBEEF00000001 /* TimeEntry+CoreDataClass.swift in Sources */,
+				AA000010DEADBEEF00000001 /* TimeEntry+CoreDataProperties.swift in Sources */,
+				AA000012DEADBEEF00000001 /* Utilities.swift in Sources */,
+				AA000014DEADBEEF00000001 /* ProjectTableViewCell.swift in Sources */,
+				AA000016DEADBEEF00000001 /* TimeEntryTableViewCell.swift in Sources */,
+				AA000018DEADBEEF00000001 /* EditTimeEntryViewController.swift in Sources */,
+				AA000020DEADBEEF00000001 /* Tclock.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
