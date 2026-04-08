@@ -327,17 +327,59 @@ ul { list-style: none; }
 
 .pp-item-name { flex: 1; }
 
+.pp-item-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.12s;
+  flex-shrink: 0;
+}
+
+.pp-item:hover .pp-item-actions { opacity: 1; }
+
+.pp-item-edit,
 .pp-item-delete {
   padding: 3px 6px;
   border-radius: 4px;
   font-size: 11px;
   color: var(--text-muted);
-  opacity: 0;
-  transition: opacity 0.12s, background 0.12s, color 0.12s;
+  transition: background 0.12s, color 0.12s;
 }
 
-.pp-item:hover .pp-item-delete { opacity: 1; }
+.pp-item-edit:hover   { background: var(--accent-light); color: var(--accent); }
 .pp-item-delete:hover { background: var(--danger); color: #fff; }
+
+/* Edit mode row */
+.pp-item-editing {
+  padding: 8px 12px;
+  gap: 6px;
+  flex-wrap: wrap;
+  cursor: default;
+}
+
+.pp-edit-color {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 2px;
+  background: none;
+  flex-shrink: 0;
+}
+
+.pp-edit-name {
+  flex: 1;
+  min-width: 80px;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.pp-edit-name:focus { outline: none; border-color: var(--accent); }
 
 #pp-new-wrap {
   border-top: 1px solid var(--border);

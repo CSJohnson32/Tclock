@@ -239,6 +239,7 @@ function updateTCWindowStats() {
 // Project Picker
 // =====================
 let pickerOpen = false;
+let editingProjectId = null;
 
 function openProjectPicker() {
   pickerOpen = true;
@@ -251,6 +252,7 @@ function openProjectPicker() {
 
 function closeProjectPicker() {
   pickerOpen = false;
+  editingProjectId = null;
   document.getElementById('project-picker').classList.add('hidden');
   document.getElementById('project-selector-btn').classList.remove('open');
   hideNewProjectForm();
@@ -264,28 +266,91 @@ function renderPickerList(query) {
     .filter(p => p.name.toLowerCase().includes(q))
     .forEach(p => {
       const li = document.createElement('li');
-      li.className = 'pp-item' + (p.id === currentProjectId ? ' active' : '');
-      li.innerHTML = `
-        <span class="project-dot" style="background:${p.color}"></span>
-        <span class="pp-item-name">${escHtml(p.name)}</span>
-        ${p.id !== 'default' ? `<button class="pp-item-delete" data-id="${p.id}" title="Delete project">✕</button>` : ''}`;
-      li.addEventListener('click', e => {
-        if (e.target.closest('.pp-item-delete')) return;
-        selectProject(p.id);
-      });
-      const delBtn = li.querySelector('.pp-item-delete');
-      if (delBtn) {
-        delBtn.addEventListener('click', e => {
-          e.stopPropagation();
-          if (confirm(`Delete project "${p.name}"? Its entries will move to General.`)) {
-            deleteProject(p.id);
-            renderPickerList(document.getElementById('pp-search').value);
-            renderTimeCard();
-            rebuildOverviewFilter();
-            rebuildTsProjectFilter();
+
+      if (editingProjectId === p.id) {
+        // Edit mode
+        li.className = 'pp-item pp-item-editing';
+        li.innerHTML = `
+          <input type="color" class="pp-edit-color" value="${p.color}" title="Pick color" />
+          <input type="text" class="pp-edit-name" value="${escHtml(p.name)}" maxlength="40" />
+          <button class="pp-edit-save btn-primary btn-sm">Save</button>
+          <button class="pp-edit-cancel btn-secondary btn-sm">Cancel</button>`;
+
+        const nameInput  = li.querySelector('.pp-edit-name');
+        const colorInput = li.querySelector('.pp-edit-color');
+
+        const doSave = () => {
+          const name = nameInput.value.trim();
+          if (!name) { nameInput.focus(); return; }
+          p.name  = name;
+          p.color = colorInput.value;
+          store.set('projects', projects);
+          editingProjectId = null;
+          renderPickerList(document.getElementById('pp-search').value);
+          if (p.id === currentProjectId) {
+            document.getElementById('ps-dot').style.background = p.color;
+            document.getElementById('ps-name').textContent = p.name;
           }
+          rebuildOverviewFilter();
+          rebuildTsProjectFilter();
+        };
+
+        li.querySelector('.pp-edit-save').addEventListener('click', e => { e.stopPropagation(); doSave(); });
+        li.querySelector('.pp-edit-cancel').addEventListener('click', e => {
+          e.stopPropagation();
+          editingProjectId = null;
+          renderPickerList(document.getElementById('pp-search').value);
         });
+        nameInput.addEventListener('keydown', e => {
+          if (e.key === 'Enter')  { e.preventDefault(); doSave(); }
+          if (e.key === 'Escape') { editingProjectId = null; renderPickerList(document.getElementById('pp-search').value); }
+        });
+        // Stop clicks inside edit row from bubbling to document (would close picker)
+        li.addEventListener('click', e => e.stopPropagation());
+        requestAnimationFrame(() => { nameInput.focus(); nameInput.select(); });
+
+      } else {
+        // Normal view
+        li.className = 'pp-item' + (p.id === currentProjectId ? ' active' : '');
+        li.innerHTML = `
+          <span class="project-dot" style="background:${p.color}"></span>
+          <span class="pp-item-name">${escHtml(p.name)}</span>
+          ${p.id !== 'default' ? `
+            <div class="pp-item-actions">
+              <button class="pp-item-edit"   title="Rename project">✏</button>
+              <button class="pp-item-delete" title="Delete project">✕</button>
+            </div>` : ''}`;
+
+        li.addEventListener('click', e => {
+          if (e.target.closest('.pp-item-actions')) return;
+          selectProject(p.id);
+        });
+
+        const editBtn = li.querySelector('.pp-item-edit');
+        if (editBtn) {
+          editBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            editingProjectId = p.id;
+            hideNewProjectForm();
+            renderPickerList(document.getElementById('pp-search').value);
+          });
+        }
+
+        const delBtn = li.querySelector('.pp-item-delete');
+        if (delBtn) {
+          delBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            if (confirm(`Delete "${p.name}"? Its entries will move to General.`)) {
+              deleteProject(p.id);
+              renderPickerList(document.getElementById('pp-search').value);
+              renderTimeCard();
+              rebuildOverviewFilter();
+              rebuildTsProjectFilter();
+            }
+          });
+        }
       }
+
       ul.appendChild(li);
     });
 }
