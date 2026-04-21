@@ -1,0 +1,14 @@
+{
+  "name": "Tclock — Time Tracker",
+  "short_name": "Tclock",
+  "description": "Personal time tracker with projects and timesheets",
+  "start_url": "/Tclock/",
+  "scope": "/Tclock/",
+  "display": "standalone",
+  "background_color": "#f4f6f9",
+  "theme_color": "#1e293b",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
