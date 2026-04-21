@@ -149,6 +149,12 @@ ul { list-style: none; }
 
 #sidebar-footer button:hover { background: var(--sidebar-hover); color: rgba(255,255,255,.9); }
 
+#sidebar-divider {
+  height: 1px;
+  background: rgba(255,255,255,.08);
+  margin: 4px 0;
+}
+
 /* =============================
    Tab Content
    ============================= */
@@ -1014,6 +1020,17 @@ ul { list-style: none; }
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           <span>Export CSV</span>
         </button>
+        <div id="sidebar-divider"></div>
+        <button id="backup-btn" title="Download all data as a backup file">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Backup Data</span>
+        </button>
+        <button id="restore-btn" title="Restore data from a backup file">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Restore Data</span>
+        </button>
+        <input type="file" id="restore-file-input" accept=".json" style="display:none" />
+        <div id="sidebar-divider"></div>
         <button id="theme-toggle" title="Toggle dark mode">
           <svg id="theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
           <svg id="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -1963,6 +1980,52 @@ function deleteEntry(id) {
 }
 
 // =====================
+// Backup / Restore JSON
+// =====================
+function backupData() {
+  const payload = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), entries, projects }, null, 2);
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([payload], { type: 'application/json' })),
+    download: `tclock-backup-${formatDateInput(Date.now())}.json`
+  });
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function restoreData(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data.entries) || !Array.isArray(data.projects)) {
+        alert('Invalid backup file — please choose a Tclock backup (.json).');
+        return;
+      }
+      if (!confirm(`This will replace all current data with the backup from ${new Date(data.exportedAt).toLocaleDateString()}.\n\nContinue?`)) return;
+
+      entries  = data.entries;
+      projects = data.projects;
+      ensureDefaultProject();
+      if (!projects.find(p => p.id === currentProjectId)) currentProjectId = 'default';
+
+      store.set('entries',  entries);
+      store.set('projects', projects);
+      store.set('currentProject', currentProjectId);
+
+      renderTimeCard();
+      rebuildOverviewFilter();
+      rebuildTsProjectFilter();
+      if (document.querySelector('#tab-overview.active'))   renderOverview();
+      if (document.querySelector('#tab-timesheets.active')) renderTimesheets();
+      alert('Data restored successfully!');
+    } catch {
+      alert('Could not read the file — make sure it\'s a valid Tclock backup.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// =====================
 // Export CSV
 // =====================
 function exportCSV() {
@@ -2072,6 +2135,13 @@ function init() {
   document.getElementById('modal-cancel').addEventListener('click', closeModal);
   document.getElementById('modal-save').addEventListener('click', saveModal);
   document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target.id === 'modal-overlay') closeModal(); });
+
+  // Backup / Restore
+  document.getElementById('backup-btn').addEventListener('click', backupData);
+  document.getElementById('restore-btn').addEventListener('click', () => document.getElementById('restore-file-input').click());
+  document.getElementById('restore-file-input').addEventListener('change', e => {
+    if (e.target.files[0]) { restoreData(e.target.files[0]); e.target.value = ''; }
+  });
 
   // Export / Theme
   document.getElementById('export-btn').addEventListener('click', exportCSV);
