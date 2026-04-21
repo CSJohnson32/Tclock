@@ -729,6 +729,52 @@ function deleteEntry(id) {
 }
 
 // =====================
+// Backup / Restore JSON
+// =====================
+function backupData() {
+  const payload = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), entries, projects }, null, 2);
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([payload], { type: 'application/json' })),
+    download: `tclock-backup-${formatDateInput(Date.now())}.json`
+  });
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function restoreData(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data.entries) || !Array.isArray(data.projects)) {
+        alert('Invalid backup file — please choose a Tclock backup (.json).');
+        return;
+      }
+      if (!confirm(`This will replace all current data with the backup from ${new Date(data.exportedAt).toLocaleDateString()}.\n\nContinue?`)) return;
+
+      entries  = data.entries;
+      projects = data.projects;
+      ensureDefaultProject();
+      if (!projects.find(p => p.id === currentProjectId)) currentProjectId = 'default';
+
+      store.set('entries',  entries);
+      store.set('projects', projects);
+      store.set('currentProject', currentProjectId);
+
+      renderTimeCard();
+      rebuildOverviewFilter();
+      rebuildTsProjectFilter();
+      if (document.querySelector('#tab-overview.active'))   renderOverview();
+      if (document.querySelector('#tab-timesheets.active')) renderTimesheets();
+      alert('Data restored successfully!');
+    } catch {
+      alert('Could not read the file — make sure it\'s a valid Tclock backup.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// =====================
 // Export CSV
 // =====================
 function exportCSV() {
@@ -838,6 +884,13 @@ function init() {
   document.getElementById('modal-cancel').addEventListener('click', closeModal);
   document.getElementById('modal-save').addEventListener('click', saveModal);
   document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target.id === 'modal-overlay') closeModal(); });
+
+  // Backup / Restore
+  document.getElementById('backup-btn').addEventListener('click', backupData);
+  document.getElementById('restore-btn').addEventListener('click', () => document.getElementById('restore-file-input').click());
+  document.getElementById('restore-file-input').addEventListener('change', e => {
+    if (e.target.files[0]) { restoreData(e.target.files[0]); e.target.value = ''; }
+  });
 
   // Export / Theme
   document.getElementById('export-btn').addEventListener('click', exportCSV);
