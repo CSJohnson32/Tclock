@@ -16,21 +16,68 @@ const store = {
 };
 
 // =====================
+// Constants
+// =====================
+const DEFAULT_PROJECT = { id: 'default', name: 'General', color: '#3b82f6' };
+
+const PALETTE = [
+  '#3b82f6','#10b981','#f59e0b','#ef4444',
+  '#8b5cf6','#ec4899','#06b6d4','#f97316',
+  '#84cc16','#14b8a6'
+];
+
+// =====================
 // State
 // =====================
-let entries       = store.get('entries', []);       // [{id, clockIn, clockOut, note}]
-let activeSession = store.get('session', null);     // {clockIn: ms} or null
-let schedule      = store.get('schedule', defaultSchedule());
-let isDark        = store.get('theme', false);
-let editingId     = null;
+let entries        = store.get('entries', []);
+let projects       = store.get('projects', [DEFAULT_PROJECT]);
+let activeSession  = store.get('session', null);   // {clockIn, projectId} | null
+let isDark         = store.get('theme', false);
+let currentProjectId = store.get('currentProject', 'default');
+let tcWindow       = 'day';    // time card window
+let ovProjectId    = 'all';    // overview project filter
+let editingId      = null;
 
-function defaultSchedule() {
-  const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-  return days.map((d, i) => ({
-    day: d,
-    enabled: i < 5,
-    hours: 8
-  }));
+// Ensure default project is always present
+function ensureDefaultProject() {
+  if (!projects.find(p => p.id === 'default')) {
+    projects.unshift(DEFAULT_PROJECT);
+    store.set('projects', projects);
+  }
+}
+
+function getProjectById(id) {
+  return projects.find(p => p.id === id) || DEFAULT_PROJECT;
+}
+
+function entryProject(e) {
+  return getProjectById(e.projectId || 'default');
+}
+
+// =====================
+// Project CRUD
+// =====================
+function addProject(name, color) {
+  const id = 'p_' + Date.now().toString(36);
+  const proj = { id, name: name.trim(), color };
+  projects.push(proj);
+  store.set('projects', projects);
+  return proj;
+}
+
+function deleteProject(id) {
+  if (id === 'default') return;
+  projects = projects.filter(p => p.id !== id);
+  store.set('projects', projects);
+  // Reassign entries to default
+  entries.forEach(e => { if ((e.projectId || 'default') === id) e.projectId = 'default'; });
+  store.set('entries', entries);
+  // Reset current project if it was deleted
+  if (currentProjectId === id) {
+    currentProjectId = 'default';
+    store.set('currentProject', 'default');
+  }
+  if (ovProjectId === id) ovProjectId = 'all';
 }
 
 // =====================
@@ -49,20 +96,15 @@ function formatDuration(ms) {
 function formatElapsed(ms) {
   if (ms < 0) ms = 0;
   const s = Math.floor(ms / 1000);
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  return `${pad(h)}:${pad(m)}:${pad(sec)}`;
+  return `${pad(Math.floor(s/3600))}:${pad(Math.floor((s%3600)/60))}:${pad(s%60)}`;
 }
 
 function formatTime(ms) {
-  const d = new Date(ms);
-  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  return new Date(ms).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
 function formatDate(ms) {
-  const d = new Date(ms);
-  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  return new Date(ms).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 function formatDateInput(ms) {
@@ -75,42 +117,27 @@ function formatTimeInput(ms) {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function startOfDay(ms) {
-  const d = new Date(ms);
-  d.setHours(0,0,0,0);
-  return d.getTime();
-}
+function startOfDay(ms)   { const d = new Date(ms); d.setHours(0,0,0,0); return d.getTime(); }
+function startOfMonth(ms) { const d = new Date(ms); d.setDate(1); d.setHours(0,0,0,0); return d.getTime(); }
 
 function startOfWeek(ms) {
   const d = new Date(ms);
-  const day = d.getDay(); // 0=Sun
-  const diff = day === 0 ? -6 : 1 - day; // back to Monday
-  d.setDate(d.getDate() + diff);
-  d.setHours(0,0,0,0);
-  return d.getTime();
-}
-
-function startOfMonth(ms) {
-  const d = new Date(ms);
-  d.setDate(1);
+  const day = d.getDay();
+  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
   d.setHours(0,0,0,0);
   return d.getTime();
 }
 
 function dayOfWeek(ms) {
-  // Returns 0=Mon, 1=Tue, ... 6=Sun
-  const d = new Date(ms).getDay(); // 0=Sun
-  return d === 0 ? 6 : d - 1;
+  const d = new Date(ms).getDay();
+  return d === 0 ? 6 : d - 1; // 0=Mon … 6=Sun
 }
 
-function totalHoursForEntries(ents) {
-  return ents.reduce((acc, e) => {
-    if (e.clockOut) return acc + (e.clockOut - e.clockIn);
-    return acc;
-  }, 0);
+function totalMs(ents) {
+  return ents.reduce((a, e) => e.clockOut ? a + (e.clockOut - e.clockIn) : a, 0);
 }
 
-function entriesInRange(start, end) {
+function inRange(start, end) {
   return entries.filter(e => e.clockIn >= start && e.clockIn < end);
 }
 
@@ -119,29 +146,73 @@ function generateId() {
 }
 
 // =====================
+// Project total for time card window
+// =====================
+function getProjectWindowMs(projectId, window) {
+  const now = Date.now();
+  let rangeStart, rangeEnd;
+  switch (window) {
+    case 'day':   rangeStart = startOfDay(now);   rangeEnd = rangeStart + 86400000; break;
+    case 'week':  rangeStart = startOfWeek(now);  rangeEnd = rangeStart + 7*86400000; break;
+    case 'month': rangeStart = startOfMonth(now); rangeEnd = startOfMonth(now + 32*86400000); break;
+    default:      rangeStart = 0; rangeEnd = Infinity;
+  }
+  const filtered = entries.filter(e =>
+    e.clockIn >= rangeStart && e.clockIn < rangeEnd &&
+    (e.projectId || 'default') === projectId
+  );
+  let ms = totalMs(filtered);
+  if (activeSession &&
+      activeSession.clockIn >= rangeStart && activeSession.clockIn < rangeEnd &&
+      (activeSession.projectId || 'default') === projectId) {
+    ms += now - activeSession.clockIn;
+  }
+  return ms;
+}
+
+function getProjectSessionCount(projectId, window) {
+  const now = Date.now();
+  let rangeStart, rangeEnd;
+  switch (window) {
+    case 'day':   rangeStart = startOfDay(now);   rangeEnd = rangeStart + 86400000; break;
+    case 'week':  rangeStart = startOfWeek(now);  rangeEnd = rangeStart + 7*86400000; break;
+    case 'month': rangeStart = startOfMonth(now); rangeEnd = startOfMonth(now + 32*86400000); break;
+    default:      rangeStart = 0; rangeEnd = Infinity;
+  }
+  const count = entries.filter(e =>
+    e.clockIn >= rangeStart && e.clockIn < rangeEnd &&
+    (e.projectId || 'default') === projectId
+  ).length;
+  const hasActive = activeSession &&
+    activeSession.clockIn >= rangeStart && activeSession.clockIn < rangeEnd &&
+    (activeSession.projectId || 'default') === projectId;
+  return count + (hasActive ? 1 : 0);
+}
+
+// =====================
 // Clock In / Out
 // =====================
 function clockIn() {
-  activeSession = { clockIn: Date.now() };
+  activeSession = { clockIn: Date.now(), projectId: currentProjectId };
   store.set('session', activeSession);
   renderTimeCard();
 }
 
 function clockOut() {
   if (!activeSession) return;
-  const entry = {
+  entries.unshift({
     id: generateId(),
     clockIn: activeSession.clockIn,
     clockOut: Date.now(),
+    projectId: activeSession.projectId || 'default',
     note: ''
-  };
-  entries.unshift(entry);
+  });
   store.set('entries', entries);
   activeSession = null;
   store.set('session', null);
   renderTimeCard();
-  renderOverview();
-  renderTimesheets();
+  if (document.querySelector('#tab-overview.active')) renderOverview();
+  if (document.querySelector('#tab-timesheets.active')) renderTimesheets();
 }
 
 // =====================
@@ -149,30 +220,170 @@ function clockOut() {
 // =====================
 function tick() {
   const now = Date.now();
-  const d = new Date(now);
-  const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-  document.getElementById('live-clock').textContent = timeStr;
+  document.getElementById('live-clock').textContent =
+    new Date(now).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
 
   if (activeSession) {
-    const elapsed = now - activeSession.clockIn;
-    document.getElementById('elapsed-time').textContent = formatElapsed(elapsed);
+    document.getElementById('elapsed-time').textContent = formatElapsed(now - activeSession.clockIn);
   }
-
-  // Update today total (includes current session if open)
-  updateTodaySummary();
+  updateTCWindowStats();
 }
 
-function updateTodaySummary() {
-  const now = Date.now();
-  const todayStart = startOfDay(now);
-  const todayEntries = entriesInRange(todayStart, todayStart + 86400000);
-  let total = totalHoursForEntries(todayEntries);
-  if (activeSession && activeSession.clockIn >= todayStart) {
-    total += now - activeSession.clockIn;
-  }
-  document.getElementById('today-total').textContent = formatDuration(total);
-  const sessionCount = todayEntries.length + (activeSession ? 1 : 0);
-  document.getElementById('today-sessions').textContent = sessionCount;
+function updateTCWindowStats() {
+  const ms = getProjectWindowMs(currentProjectId, tcWindow);
+  document.getElementById('project-window-total').textContent = formatDuration(ms);
+  document.getElementById('today-sessions').textContent = getProjectSessionCount(currentProjectId, tcWindow);
+}
+
+// =====================
+// Project Picker
+// =====================
+let pickerOpen = false;
+let editingProjectId = null;
+
+function openProjectPicker() {
+  pickerOpen = true;
+  document.getElementById('project-picker').classList.remove('hidden');
+  document.getElementById('project-selector-btn').classList.add('open');
+  document.getElementById('pp-search').value = '';
+  renderPickerList('');
+  document.getElementById('pp-search').focus();
+}
+
+function closeProjectPicker() {
+  pickerOpen = false;
+  editingProjectId = null;
+  document.getElementById('project-picker').classList.add('hidden');
+  document.getElementById('project-selector-btn').classList.remove('open');
+  hideNewProjectForm();
+}
+
+function renderPickerList(query) {
+  const ul = document.getElementById('pp-list');
+  ul.innerHTML = '';
+  const q = query.toLowerCase();
+  projects
+    .filter(p => p.name.toLowerCase().includes(q))
+    .forEach(p => {
+      const li = document.createElement('li');
+
+      if (editingProjectId === p.id) {
+        // Edit mode
+        li.className = 'pp-item pp-item-editing';
+        li.innerHTML = `
+          <input type="color" class="pp-edit-color" value="${p.color}" title="Pick color" />
+          <input type="text" class="pp-edit-name" value="${escHtml(p.name)}" maxlength="40" />
+          <button class="pp-edit-save btn-primary btn-sm">Save</button>
+          <button class="pp-edit-cancel btn-secondary btn-sm">Cancel</button>`;
+
+        const nameInput  = li.querySelector('.pp-edit-name');
+        const colorInput = li.querySelector('.pp-edit-color');
+
+        const doSave = () => {
+          const name = nameInput.value.trim();
+          if (!name) { nameInput.focus(); return; }
+          p.name  = name;
+          p.color = colorInput.value;
+          store.set('projects', projects);
+          editingProjectId = null;
+          renderPickerList(document.getElementById('pp-search').value);
+          if (p.id === currentProjectId) {
+            document.getElementById('ps-dot').style.background = p.color;
+            document.getElementById('ps-name').textContent = p.name;
+          }
+          rebuildOverviewFilter();
+          rebuildTsProjectFilter();
+        };
+
+        li.querySelector('.pp-edit-save').addEventListener('click', e => { e.stopPropagation(); doSave(); });
+        li.querySelector('.pp-edit-cancel').addEventListener('click', e => {
+          e.stopPropagation();
+          editingProjectId = null;
+          renderPickerList(document.getElementById('pp-search').value);
+        });
+        nameInput.addEventListener('keydown', e => {
+          if (e.key === 'Enter')  { e.preventDefault(); doSave(); }
+          if (e.key === 'Escape') { editingProjectId = null; renderPickerList(document.getElementById('pp-search').value); }
+        });
+        // Stop clicks inside edit row from bubbling to document (would close picker)
+        li.addEventListener('click', e => e.stopPropagation());
+        requestAnimationFrame(() => { nameInput.focus(); nameInput.select(); });
+
+      } else {
+        // Normal view
+        li.className = 'pp-item' + (p.id === currentProjectId ? ' active' : '');
+        li.innerHTML = `
+          <span class="project-dot" style="background:${p.color}"></span>
+          <span class="pp-item-name">${escHtml(p.name)}</span>
+          ${p.id !== 'default' ? `
+            <div class="pp-item-actions">
+              <button class="pp-item-edit"   title="Rename project">✏</button>
+              <button class="pp-item-delete" title="Delete project">✕</button>
+            </div>` : ''}`;
+
+        li.addEventListener('click', e => {
+          if (e.target.closest('.pp-item-actions')) return;
+          selectProject(p.id);
+        });
+
+        const editBtn = li.querySelector('.pp-item-edit');
+        if (editBtn) {
+          editBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            editingProjectId = p.id;
+            hideNewProjectForm();
+            renderPickerList(document.getElementById('pp-search').value);
+          });
+        }
+
+        const delBtn = li.querySelector('.pp-item-delete');
+        if (delBtn) {
+          delBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            if (confirm(`Delete "${p.name}"? Its entries will move to General.`)) {
+              deleteProject(p.id);
+              renderPickerList(document.getElementById('pp-search').value);
+              renderTimeCard();
+              rebuildOverviewFilter();
+              rebuildTsProjectFilter();
+            }
+          });
+        }
+      }
+
+      ul.appendChild(li);
+    });
+}
+
+function selectProject(id) {
+  currentProjectId = id;
+  store.set('currentProject', id);
+  closeProjectPicker();
+  renderTimeCard();
+}
+
+function showNewProjectForm() {
+  document.getElementById('pp-new-form').classList.remove('hidden');
+  document.getElementById('pp-new-trigger').classList.add('hidden');
+  // Pick a color from the palette cycling by current project count
+  document.getElementById('pp-new-color').value = PALETTE[projects.length % PALETTE.length];
+  document.getElementById('pp-new-name').value = '';
+  document.getElementById('pp-new-name').focus();
+}
+
+function hideNewProjectForm() {
+  document.getElementById('pp-new-form').classList.add('hidden');
+  document.getElementById('pp-new-trigger').classList.remove('hidden');
+}
+
+function confirmNewProject() {
+  const name = document.getElementById('pp-new-name').value.trim();
+  if (!name) return;
+  const color = document.getElementById('pp-new-color').value;
+  const proj = addProject(name, color);
+  selectProject(proj.id);
+  rebuildOverviewFilter();
+  rebuildTsProjectFilter();
 }
 
 // =====================
@@ -189,7 +400,8 @@ function renderTimeCard() {
     btn.innerHTML = `
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
       Clock Out`;
-    statusText.textContent = 'Clocked in since ' + formatTime(activeSession.clockIn);
+    const sessionProj = getProjectById(activeSession.projectId || 'default');
+    statusText.textContent = `Clocked in · ${sessionProj.name} · since ${formatTime(activeSession.clockIn)}`;
     elapsedDiv.classList.remove('hidden');
     panel.classList.add('clocked-in');
   } else {
@@ -202,119 +414,158 @@ function renderTimeCard() {
     panel.classList.remove('clocked-in');
   }
 
-  const now = Date.now();
-  const dateStr = new Date(now).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  document.getElementById('current-date-display').textContent = dateStr;
-  updateTodaySummary();
+  // Update project selector button
+  const proj = getProjectById(currentProjectId);
+  document.getElementById('ps-dot').style.background = proj.color;
+  document.getElementById('ps-name').textContent = proj.name;
+
+  // Date display
+  document.getElementById('current-date-display').textContent =
+    new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  updateTCWindowStats();
 }
 
 // =====================
 // Render: Overview
 // =====================
+function rebuildOverviewFilter() {
+  const container = document.getElementById('overview-project-filter');
+  container.innerHTML = '';
+  [{ id: 'all', label: 'All Projects' }, ...projects.map(p => ({ id: p.id, label: p.name, color: p.color }))].forEach(item => {
+    const btn = document.createElement('button');
+    btn.className = 'seg-btn' + (item.id === ovProjectId ? ' active' : '');
+    if (item.color) {
+      btn.innerHTML = `<span class="project-dot" style="background:${item.color};margin-right:5px"></span>${escHtml(item.label)}`;
+    } else {
+      btn.textContent = item.label;
+    }
+    btn.addEventListener('click', () => {
+      ovProjectId = item.id;
+      container.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderOverview();
+    });
+    container.appendChild(btn);
+  });
+}
+
 function renderOverview() {
+  rebuildOverviewFilter();
   const now = Date.now();
   const todayStart = startOfDay(now);
   const weekStart  = startOfWeek(now);
   const monthStart = startOfMonth(now);
 
-  function totalMs(rangeEntries, includeActive) {
-    let ms = totalHoursForEntries(rangeEntries);
-    if (includeActive && activeSession) {
-      const start = Math.max(activeSession.clockIn, rangeEntries._rangeStart || 0);
-      ms += now - start;
-    }
-    return ms;
+  function filteredEntries(ents) {
+    if (ovProjectId === 'all') return ents;
+    return ents.filter(e => (e.projectId || 'default') === ovProjectId);
   }
 
-  const todayEnts  = entriesInRange(todayStart, todayStart + 86400000);
-  const weekEnts   = entriesInRange(weekStart, weekStart + 7*86400000);
-  const monthEnts  = entriesInRange(monthStart, startOfMonth(now + 32*86400000));
-
-  let todayMs = totalHoursForEntries(todayEnts);
-  let weekMs  = totalHoursForEntries(weekEnts);
-  let monthMs = totalHoursForEntries(monthEnts);
-
-  if (activeSession) {
-    const s = activeSession.clockIn;
-    todayMs += s >= todayStart ? now - s : 0;
-    weekMs  += s >= weekStart  ? now - s : 0;
-    monthMs += s >= monthStart ? now - s : 0;
+  function sessionMs(rangeStart, rangeEnd) {
+    if (!activeSession) return 0;
+    if (activeSession.clockIn < rangeStart || activeSession.clockIn >= rangeEnd) return 0;
+    if (ovProjectId !== 'all' && (activeSession.projectId || 'default') !== ovProjectId) return 0;
+    return now - activeSession.clockIn;
   }
 
-  document.getElementById('stat-today').textContent  = formatDuration(todayMs);
-  document.getElementById('stat-week').textContent   = formatDuration(weekMs);
-  document.getElementById('stat-month').textContent  = formatDuration(monthMs);
-  document.getElementById('stat-sessions').textContent = entries.length + (activeSession ? 1 : 0);
+  const todayEnts  = filteredEntries(inRange(todayStart, todayStart + 86400000));
+  const weekEnts   = filteredEntries(inRange(weekStart, weekStart + 7*86400000));
+  const monthEnts  = filteredEntries(inRange(monthStart, startOfMonth(now + 32*86400000)));
 
-  // Goal sub-labels
-  const todayDow = dayOfWeek(now); // 0=Mon
-  const todaySched = schedule[todayDow];
-  if (todaySched && todaySched.enabled) {
-    const goalMs = todaySched.hours * 3600000;
-    const pct = Math.min(100, Math.round(todayMs / goalMs * 100));
-    document.getElementById('stat-today-goal').textContent = `${pct}% of ${todaySched.hours}h goal`;
-  } else {
-    document.getElementById('stat-today-goal').textContent = '';
-  }
+  const todayMs  = totalMs(todayEnts)  + sessionMs(todayStart, todayStart + 86400000);
+  const weekMs   = totalMs(weekEnts)   + sessionMs(weekStart, weekStart + 7*86400000);
+  const monthMs  = totalMs(monthEnts)  + sessionMs(monthStart, startOfMonth(now + 32*86400000));
 
-  const weekGoalMs = schedule.filter(d => d.enabled).reduce((a, d) => a + d.hours * 3600000, 0);
-  if (weekGoalMs > 0) {
-    const pct = Math.min(100, Math.round(weekMs / weekGoalMs * 100));
-    document.getElementById('stat-week-goal').textContent = `${pct}% of ${formatDuration(weekGoalMs)} goal`;
-  }
+  const allFiltered = filteredEntries(entries);
+  const sessionCount = allFiltered.length + (activeSession && (ovProjectId === 'all' || (activeSession.projectId||'default') === ovProjectId) ? 1 : 0);
+
+  document.getElementById('stat-today').textContent    = formatDuration(todayMs);
+  document.getElementById('stat-week').textContent     = formatDuration(weekMs);
+  document.getElementById('stat-month').textContent    = formatDuration(monthMs);
+  document.getElementById('stat-sessions').textContent = sessionCount;
 
   // Week bar chart
   const weekBars = document.getElementById('week-bars');
   weekBars.innerHTML = '';
-  const DAYS_SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const maxHoursDisplay = Math.max(
-    ...schedule.map(d => d.enabled ? d.hours : 0),
-    ...DAYS_SHORT.map((_, i) => {
-      const dayStart = weekStart + i * 86400000;
-      const ents = entriesInRange(dayStart, dayStart + 86400000);
-      return totalHoursForEntries(ents) / 3600000;
-    }),
-    1
-  );
-
-  DAYS_SHORT.forEach((label, i) => {
-    const dayStart = weekStart + i * 86400000;
-    const ents = entriesInRange(dayStart, dayStart + 86400000);
-    let hoursMs = totalHoursForEntries(ents);
-    if (activeSession && activeSession.clockIn >= dayStart && activeSession.clockIn < dayStart + 86400000) {
-      hoursMs += now - activeSession.clockIn;
+  const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const weekHours = DAYS.map((_, i) => {
+    const ds = weekStart + i * 86400000;
+    const de = ds + 86400000;
+    const ents = filteredEntries(inRange(ds, de));
+    let ms = totalMs(ents);
+    if (activeSession && activeSession.clockIn >= ds && activeSession.clockIn < de) {
+      if (ovProjectId === 'all' || (activeSession.projectId||'default') === ovProjectId) {
+        ms += now - activeSession.clockIn;
+      }
     }
-    const hours = hoursMs / 3600000;
-    const goalHours = schedule[i]?.enabled ? schedule[i].hours : 0;
-    const heightPct = maxHoursDisplay > 0 ? (hours / maxHoursDisplay) * 100 : 0;
-    const isToday = dayOfWeek(now) === i;
+    return ms / 3600000;
+  });
+  const maxH = Math.max(...weekHours, 1);
 
+  DAYS.forEach((label, i) => {
+    const hours = weekHours[i];
+    const isToday = dayOfWeek(now) === i;
     const col = document.createElement('div');
     col.className = 'week-bar-col';
     col.innerHTML = `
       <div class="week-bar-fill-wrap">
-        <div class="week-bar-fill ${isToday ? 'today' : ''} ${goalHours > 0 && hours >= goalHours ? 'goal-exceeded' : ''}"
-             style="height: ${Math.max(heightPct, hours > 0 ? 4 : 0)}%"></div>
+        <div class="week-bar-fill ${isToday ? 'today' : ''}"
+             style="height:${Math.max((hours/maxH)*100, hours > 0 ? 3 : 0)}%"></div>
       </div>
       <div class="week-bar-label">${label}</div>
-      <div class="week-bar-hours">${hours > 0 ? hours.toFixed(1) + 'h' : ''}</div>`;
+      <div class="week-bar-hours">${hours > 0 ? hours.toFixed(1)+'h' : ''}</div>`;
     weekBars.appendChild(col);
   });
+
+  // Top Projects chart
+  const chart = document.getElementById('projects-bar-chart');
+  chart.innerHTML = '';
+  const projTotals = projects.map(p => {
+    const ents = entries.filter(e => (e.projectId||'default') === p.id);
+    let ms = totalMs(ents);
+    if (activeSession && (activeSession.projectId||'default') === p.id) ms += now - activeSession.clockIn;
+    return { proj: p, ms };
+  }).filter(x => x.ms > 0).sort((a, b) => b.ms - a.ms);
+
+  if (projTotals.length === 0) {
+    chart.innerHTML = '<p style="color:var(--text-muted);font-size:14px">No data yet.</p>';
+  } else {
+    const maxMs = projTotals[0].ms;
+    projTotals.forEach(({ proj, ms }) => {
+      const row = document.createElement('div');
+      row.className = 'proj-bar-row';
+      row.innerHTML = `
+        <div class="proj-bar-name">
+          <span class="project-dot project-dot-lg" style="background:${proj.color}"></span>
+          <span>${escHtml(proj.name)}</span>
+        </div>
+        <div class="proj-bar-track">
+          <div class="proj-bar-fill" style="width:${(ms/maxMs)*100}%;background:${proj.color}"></div>
+        </div>
+        <div class="proj-bar-dur">${formatDuration(ms)}</div>`;
+      chart.appendChild(row);
+    });
+  }
 
   // Recent entries
   const recentList = document.getElementById('recent-list');
   recentList.innerHTML = '';
-  const recent = entries.slice(0, 8);
+  const recent = filteredEntries(entries).slice(0, 8);
   if (recent.length === 0) {
-    recentList.innerHTML = '<p style="color:var(--text-muted); font-size:14px;">No entries yet. Clock in to get started!</p>';
+    recentList.innerHTML = '<p style="color:var(--text-muted);font-size:14px">No entries yet. Clock in to get started!</p>';
   } else {
     recent.forEach(e => {
+      const proj = entryProject(e);
+      const dur = e.clockOut ? formatDuration(e.clockOut - e.clockIn) : 'In progress';
       const div = document.createElement('div');
       div.className = 'recent-entry';
-      const dur = e.clockOut ? formatDuration(e.clockOut - e.clockIn) : 'In progress';
       div.innerHTML = `
-        <span class="recent-entry-date">${formatDate(e.clockIn)}</span>
-        <span class="recent-entry-time">${formatTime(e.clockIn)} – ${e.clockOut ? formatTime(e.clockOut) : '...'}</span>
+        <span class="recent-entry-project">
+          <span class="project-dot" style="background:${proj.color}"></span>
+          <span>${escHtml(proj.name)} · ${formatDate(e.clockIn)}</span>
+        </span>
+        <span class="recent-entry-time">${formatTime(e.clockIn)} – ${e.clockOut ? formatTime(e.clockOut) : '…'}</span>
         <span class="recent-entry-dur">${dur}</span>`;
       recentList.appendChild(div);
     });
@@ -324,50 +575,51 @@ function renderOverview() {
 // =====================
 // Render: Timesheets
 // =====================
+function rebuildTsProjectFilter() {
+  const sel = document.getElementById('ts-filter-project');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="all">All Projects</option>';
+  projects.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.name;
+    sel.appendChild(opt);
+  });
+  sel.value = prev || 'all';
+}
+
 function renderTimesheets() {
-  const period = document.getElementById('ts-filter-period').value;
+  rebuildTsProjectFilter();
+  const period   = document.getElementById('ts-filter-period').value;
+  const minDurMs = parseInt(document.getElementById('ts-filter-duration').value, 10) * 60000;
+  const projFilter = document.getElementById('ts-filter-project').value;
   const now = Date.now();
 
   let rangeStart, rangeEnd;
   switch (period) {
-    case 'week':
-      rangeStart = startOfWeek(now);
-      rangeEnd   = rangeStart + 7 * 86400000;
-      break;
-    case 'last-week':
-      rangeEnd   = startOfWeek(now);
-      rangeStart = rangeEnd - 7 * 86400000;
-      break;
-    case 'month':
-      rangeStart = startOfMonth(now);
-      rangeEnd   = startOfMonth(now + 32 * 86400000);
-      break;
+    case 'week':      rangeStart = startOfWeek(now);  rangeEnd = rangeStart + 7*86400000; break;
+    case 'last-week': rangeEnd   = startOfWeek(now);  rangeStart = rangeEnd - 7*86400000; break;
+    case 'month':     rangeStart = startOfMonth(now); rangeEnd = startOfMonth(now + 32*86400000); break;
     case 'last-month': {
-      rangeEnd   = startOfMonth(now);
-      const d = new Date(rangeEnd);
-      d.setMonth(d.getMonth() - 1);
-      rangeStart = d.getTime();
-      break;
+      rangeEnd = startOfMonth(now);
+      const d = new Date(rangeEnd); d.setMonth(d.getMonth()-1);
+      rangeStart = d.getTime(); break;
     }
-    default:
-      rangeStart = 0;
-      rangeEnd   = Infinity;
+    default: rangeStart = 0; rangeEnd = Infinity;
   }
 
-  const filtered = entries.filter(e => e.clockIn >= rangeStart && e.clockIn < rangeEnd);
+  let filtered = entries.filter(e => e.clockIn >= rangeStart && e.clockIn < rangeEnd);
+  if (minDurMs > 0) filtered = filtered.filter(e => e.clockOut && (e.clockOut - e.clockIn) >= minDurMs);
+  if (projFilter !== 'all') filtered = filtered.filter(e => (e.projectId||'default') === projFilter);
 
-  const totalMs = totalHoursForEntries(filtered);
-  document.getElementById('ts-total-hours').textContent = formatDuration(totalMs);
+  document.getElementById('ts-total-hours').textContent = formatDuration(totalMs(filtered));
   document.getElementById('ts-entry-count').textContent = `${filtered.length} entr${filtered.length === 1 ? 'y' : 'ies'}`;
 
-  const list = document.getElementById('timesheet-list');
+  const list  = document.getElementById('timesheet-list');
   const empty = document.getElementById('timesheet-empty');
   list.innerHTML = '';
 
-  if (filtered.length === 0) {
-    empty.classList.remove('hidden');
-    return;
-  }
+  if (filtered.length === 0) { empty.classList.remove('hidden'); return; }
   empty.classList.add('hidden');
 
   // Group by date
@@ -378,26 +630,29 @@ function renderTimesheets() {
     groups[key].push(e);
   });
 
-  const sortedKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
-
-  sortedKeys.forEach(key => {
-    const dayEntries = groups[key];
-    const dayMs = totalHoursForEntries(dayEntries);
+  Object.keys(groups).sort((a, b) => b.localeCompare(a)).forEach(key => {
+    const dayEnts = groups[key];
     const label = new Date(key + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-
     const group = document.createElement('div');
     group.className = 'ts-group';
     group.innerHTML = `
       <div class="ts-group-header">
         <span>${label}</span>
-        <span class="ts-group-header-hours">${formatDuration(dayMs)}</span>
+        <span class="ts-group-header-hours">${formatDuration(totalMs(dayEnts))}</span>
       </div>`;
 
-    dayEntries.sort((a, b) => b.clockIn - a.clockIn).forEach(e => {
+    dayEnts.sort((a, b) => b.clockIn - a.clockIn).forEach(e => {
+      const proj = entryProject(e);
+      const dur = e.clockOut
+        ? formatDuration(e.clockOut - e.clockIn)
+        : '<em style="color:var(--success)">In progress</em>';
       const row = document.createElement('div');
       row.className = 'ts-entry';
-      const dur = e.clockOut ? formatDuration(e.clockOut - e.clockIn) : '<em style="color:var(--success)">In progress</em>';
       row.innerHTML = `
+        <span class="ts-entry-project">
+          <span class="project-dot" style="background:${proj.color}"></span>
+          <span class="ts-entry-project-name">${escHtml(proj.name)}</span>
+        </span>
         <span class="ts-entry-time">${formatTime(e.clockIn)}</span>
         <span class="ts-entry-time">${e.clockOut ? formatTime(e.clockOut) : '–'}</span>
         <span class="ts-entry-dur">${dur}</span>
@@ -407,67 +662,11 @@ function renderTimesheets() {
         </div>`;
       group.appendChild(row);
     });
-
     list.appendChild(group);
   });
 
-  // Bind entry action buttons
-  list.querySelectorAll('.ts-btn-edit').forEach(btn => {
-    btn.addEventListener('click', () => openEditModal(btn.dataset.id));
-  });
-  list.querySelectorAll('.ts-btn-delete').forEach(btn => {
-    btn.addEventListener('click', () => deleteEntry(btn.dataset.id));
-  });
-}
-
-// =====================
-// Render: Schedule
-// =====================
-function renderSchedule() {
-  const container = document.getElementById('schedule-days');
-  container.innerHTML = '';
-
-  schedule.forEach((d, i) => {
-    const row = document.createElement('div');
-    row.className = 'sched-day-row';
-    row.innerHTML = `
-      <label class="sched-day-toggle">
-        <input type="checkbox" data-idx="${i}" class="sched-toggle" ${d.enabled ? 'checked' : ''} />
-        <div class="toggle-track"></div>
-        <div class="toggle-thumb"></div>
-      </label>
-      <span class="sched-day-name">${d.day}</span>
-      <div class="sched-day-hours">
-        <input type="number" min="0.5" max="24" step="0.5" value="${d.hours}"
-               data-idx="${i}" class="sched-hours-input" ${d.enabled ? '' : 'disabled'} />
-        <span>hours</span>
-      </div>`;
-    container.appendChild(row);
-  });
-
-  updateScheduleTotals();
-
-  container.querySelectorAll('.sched-toggle').forEach(cb => {
-    cb.addEventListener('change', () => {
-      const i = +cb.dataset.idx;
-      schedule[i].enabled = cb.checked;
-      container.querySelectorAll('.sched-hours-input')[i].disabled = !cb.checked;
-      updateScheduleTotals();
-    });
-  });
-
-  container.querySelectorAll('.sched-hours-input').forEach(input => {
-    input.addEventListener('input', () => {
-      const i = +input.dataset.idx;
-      schedule[i].hours = parseFloat(input.value) || 0;
-      updateScheduleTotals();
-    });
-  });
-}
-
-function updateScheduleTotals() {
-  const total = schedule.filter(d => d.enabled).reduce((a, d) => a + d.hours, 0);
-  document.getElementById('sched-weekly-total').textContent = total + 'h';
+  list.querySelectorAll('.ts-btn-edit').forEach(btn => btn.addEventListener('click', () => openEditModal(btn.dataset.id)));
+  list.querySelectorAll('.ts-btn-delete').forEach(btn => btn.addEventListener('click', () => deleteEntry(btn.dataset.id)));
 }
 
 // =====================
@@ -478,11 +677,21 @@ function openEditModal(id) {
   if (!entry) return;
   editingId = id;
 
-  document.getElementById('edit-date').value     = formatDateInput(entry.clockIn);
+  // Populate project select
+  const sel = document.getElementById('edit-project');
+  sel.innerHTML = '';
+  projects.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.name;
+    sel.appendChild(opt);
+  });
+  sel.value = entry.projectId || 'default';
+
+  document.getElementById('edit-date').value      = formatDateInput(entry.clockIn);
   document.getElementById('edit-clock-in').value  = formatTimeInput(entry.clockIn);
   document.getElementById('edit-clock-out').value = entry.clockOut ? formatTimeInput(entry.clockOut) : '';
-  document.getElementById('edit-note').value       = entry.note || '';
-
+  document.getElementById('edit-note').value      = entry.note || '';
   document.getElementById('modal-overlay').classList.remove('hidden');
 }
 
@@ -496,22 +705,22 @@ function saveModal() {
   const entry = entries.find(e => e.id === editingId);
   if (!entry) return;
 
-  const dateStr    = document.getElementById('edit-date').value;
-  const inStr      = document.getElementById('edit-clock-in').value;
-  const outStr     = document.getElementById('edit-clock-out').value;
-  const note       = document.getElementById('edit-note').value.trim();
+  const dateStr = document.getElementById('edit-date').value;
+  const inStr   = document.getElementById('edit-clock-in').value;
+  const outStr  = document.getElementById('edit-clock-out').value;
 
   if (!dateStr || !inStr) return;
 
-  entry.clockIn  = new Date(`${dateStr}T${inStr}:00`).getTime();
-  entry.clockOut = outStr ? new Date(`${dateStr}T${outStr}:00`).getTime() : null;
-  entry.note     = note;
+  entry.projectId = document.getElementById('edit-project').value;
+  entry.clockIn   = new Date(`${dateStr}T${inStr}:00`).getTime();
+  entry.clockOut  = outStr ? new Date(`${dateStr}T${outStr}:00`).getTime() : null;
+  entry.note      = document.getElementById('edit-note').value.trim();
 
   entries.sort((a, b) => b.clockIn - a.clockIn);
   store.set('entries', entries);
   closeModal();
   renderTimesheets();
-  renderOverview();
+  if (document.querySelector('#tab-overview.active')) renderOverview();
 }
 
 function deleteEntry(id) {
@@ -519,33 +728,80 @@ function deleteEntry(id) {
   entries = entries.filter(e => e.id !== id);
   store.set('entries', entries);
   renderTimesheets();
-  renderOverview();
   renderTimeCard();
+}
+
+// =====================
+// Backup / Restore JSON
+// =====================
+function backupData() {
+  const payload = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), entries, projects }, null, 2);
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([payload], { type: 'application/json' })),
+    download: `tclock-backup-${formatDateInput(Date.now())}.json`
+  });
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function restoreData(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data.entries) || !Array.isArray(data.projects)) {
+        alert('Invalid backup file — please choose a Tclock backup (.json).');
+        return;
+      }
+      if (!confirm(`This will replace all current data with the backup from ${new Date(data.exportedAt).toLocaleDateString()}.\n\nContinue?`)) return;
+
+      entries  = data.entries;
+      projects = data.projects;
+      ensureDefaultProject();
+      if (!projects.find(p => p.id === currentProjectId)) currentProjectId = 'default';
+
+      store.set('entries',  entries);
+      store.set('projects', projects);
+      store.set('currentProject', currentProjectId);
+
+      renderTimeCard();
+      rebuildOverviewFilter();
+      rebuildTsProjectFilter();
+      if (document.querySelector('#tab-overview.active'))   renderOverview();
+      if (document.querySelector('#tab-timesheets.active')) renderTimesheets();
+      alert('Data restored successfully!');
+    } catch {
+      alert('Could not read the file — make sure it\'s a valid Tclock backup.');
+    }
+  };
+  reader.readAsText(file);
 }
 
 // =====================
 // Export CSV
 // =====================
 function exportCSV() {
-  const headers = ['Date', 'Clock In', 'Clock Out', 'Duration (min)', 'Note'];
   const rows = entries
     .filter(e => e.clockOut)
     .map(e => {
-      const date = new Date(e.clockIn).toLocaleDateString('en-US');
-      const cin  = formatTime(e.clockIn);
-      const cout = formatTime(e.clockOut);
-      const mins = Math.round((e.clockOut - e.clockIn) / 60000);
-      return [date, cin, cout, mins, e.note || ''].map(v => `"${v}"`).join(',');
+      const proj = entryProject(e);
+      return [
+        new Date(e.clockIn).toLocaleDateString('en-US'),
+        proj.name,
+        formatTime(e.clockIn),
+        formatTime(e.clockOut),
+        Math.round((e.clockOut - e.clockIn) / 60000),
+        e.note || ''
+      ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
     });
 
-  const csv = [headers.join(','), ...rows].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = `tclock-export-${formatDateInput(Date.now())}.csv`;
+  const csv = ['Date,Project,Clock In,Clock Out,Duration (min),Note', ...rows].join('\n');
+  const a   = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })),
+    download: `tclock-${formatDateInput(Date.now())}.csv`
+  });
   a.click();
-  URL.revokeObjectURL(url);
+  URL.revokeObjectURL(a.href);
 }
 
 // =====================
@@ -559,78 +815,102 @@ function applyTheme(dark) {
 }
 
 // =====================
+// Escape HTML
+// =====================
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// =====================
 // Tab Navigation
 // =====================
 function switchTab(tabId) {
-  document.querySelectorAll('.nav-item').forEach(li => {
-    li.classList.toggle('active', li.dataset.tab === tabId);
-  });
-  document.querySelectorAll('.tab-content').forEach(sec => {
-    sec.classList.toggle('active', sec.id === 'tab-' + tabId);
-  });
-  if (tabId === 'overview')    renderOverview();
-  if (tabId === 'timesheets')  renderTimesheets();
-  if (tabId === 'schedule')    renderSchedule();
+  document.querySelectorAll('.nav-item').forEach(li => li.classList.toggle('active', li.dataset.tab === tabId));
+  document.querySelectorAll('.tab-content').forEach(s => s.classList.toggle('active', s.id === 'tab-' + tabId));
+  if (tabId === 'overview')   renderOverview();
+  if (tabId === 'timesheets') renderTimesheets();
 }
 
 // =====================
 // Init
 // =====================
 function init() {
-  // Apply saved theme
+  ensureDefaultProject();
+
+  // Validate currentProjectId still exists
+  if (!projects.find(p => p.id === currentProjectId)) {
+    currentProjectId = 'default';
+    store.set('currentProject', 'default');
+  }
+
   applyTheme(isDark);
 
-  // Tab clicks
-  document.querySelectorAll('.nav-item').forEach(li => {
-    li.addEventListener('click', () => switchTab(li.dataset.tab));
-  });
+  // Tab nav
+  document.querySelectorAll('.nav-item').forEach(li => li.addEventListener('click', () => switchTab(li.dataset.tab)));
 
   // Clock button
-  document.getElementById('clock-btn').addEventListener('click', () => {
-    if (activeSession) clockOut();
-    else clockIn();
+  document.getElementById('clock-btn').addEventListener('click', () => activeSession ? clockOut() : clockIn());
+
+  // Time card window segmented control
+  document.getElementById('tc-window-control').addEventListener('click', e => {
+    const btn = e.target.closest('.seg-btn');
+    if (!btn) return;
+    tcWindow = btn.dataset.window;
+    document.querySelectorAll('#tc-window-control .seg-btn').forEach(b => b.classList.toggle('active', b === btn));
+    updateTCWindowStats();
   });
 
-  // Timesheet filter
+  // Project selector
+  const selectorBtn = document.getElementById('project-selector-btn');
+  selectorBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    pickerOpen ? closeProjectPicker() : openProjectPicker();
+  });
+
+  document.getElementById('project-picker').addEventListener('click', e => e.stopPropagation());
+
+  document.addEventListener('click', () => { if (pickerOpen) closeProjectPicker(); });
+
+  document.getElementById('pp-search').addEventListener('input', e => renderPickerList(e.target.value));
+
+  document.getElementById('pp-new-trigger').addEventListener('click', e => { e.stopPropagation(); showNewProjectForm(); });
+  document.getElementById('pp-new-confirm').addEventListener('click', e => { e.stopPropagation(); confirmNewProject(); });
+  document.getElementById('pp-new-cancel').addEventListener('click',  e => { e.stopPropagation(); hideNewProjectForm(); });
+  document.getElementById('pp-new-name').addEventListener('keydown', e => { if (e.key === 'Enter') confirmNewProject(); if (e.key === 'Escape') hideNewProjectForm(); });
+
+  // Timesheets filters
   document.getElementById('ts-filter-period').addEventListener('change', renderTimesheets);
+  document.getElementById('ts-filter-duration').addEventListener('change', renderTimesheets);
+  document.getElementById('ts-filter-project').addEventListener('change', renderTimesheets);
 
   // Modal
   document.getElementById('modal-cancel').addEventListener('click', closeModal);
   document.getElementById('modal-save').addEventListener('click', saveModal);
-  document.getElementById('modal-overlay').addEventListener('click', e => {
-    if (e.target === document.getElementById('modal-overlay')) closeModal();
+  document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target.id === 'modal-overlay') closeModal(); });
+
+  // Backup / Restore
+  document.getElementById('backup-btn').addEventListener('click', backupData);
+  document.getElementById('restore-btn').addEventListener('click', () => document.getElementById('restore-file-input').click());
+  document.getElementById('restore-file-input').addEventListener('change', e => {
+    if (e.target.files[0]) { restoreData(e.target.files[0]); e.target.value = ''; }
   });
 
-  // Export
+  // Export / Theme
   document.getElementById('export-btn').addEventListener('click', exportCSV);
-
-  // Theme toggle
   document.getElementById('theme-toggle').addEventListener('click', () => {
     isDark = !isDark;
     store.set('theme', isDark);
     applyTheme(isDark);
   });
 
-  // Schedule save
-  document.getElementById('save-schedule-btn').addEventListener('click', () => {
-    store.set('schedule', schedule);
-    const msg = document.getElementById('schedule-saved-msg');
-    msg.classList.remove('hidden');
-    setTimeout(() => msg.classList.add('hidden'), 2500);
-    renderOverview();
-  });
-
-  // Initial renders
+  // Initial render
   renderTimeCard();
-
-  // Live clock — tick immediately then every second
   tick();
   setInterval(tick, 1000);
 
-  // Refresh overview every minute if on that tab
   setInterval(() => {
     const active = document.querySelector('.tab-content.active');
-    if (active && active.id === 'tab-overview') renderOverview();
+    if (active?.id === 'tab-overview') renderOverview();
   }, 60000);
 }
 
