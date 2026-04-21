@@ -649,7 +649,10 @@ function renderTimesheets() {
       const row = document.createElement('div');
       row.className = 'ts-entry';
       row.innerHTML = `
-        <span class="project-dot ts-entry-project-dot" style="background:${proj.color}" title="${escHtml(proj.name)}"></span>
+        <span class="ts-entry-project">
+          <span class="project-dot" style="background:${proj.color}"></span>
+          <span class="ts-entry-project-name">${escHtml(proj.name)}</span>
+        </span>
         <span class="ts-entry-time">${formatTime(e.clockIn)}</span>
         <span class="ts-entry-time">${e.clockOut ? formatTime(e.clockOut) : '–'}</span>
         <span class="ts-entry-dur">${dur}</span>
