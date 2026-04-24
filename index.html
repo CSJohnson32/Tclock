@@ -776,6 +776,147 @@ ul { list-style: none; }
 }
 
 /* =============================
+   Daily Summary
+   ============================= */
+#daily-summary-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 28px;
+  box-shadow: var(--shadow);
+}
+
+#ds-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+#ds-header h2 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-right: auto;
+}
+
+#ds-date-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+#ds-date-nav button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  transition: background 0.12s, color 0.12s;
+}
+
+#ds-date-nav button:hover {
+  background: var(--surface-alt);
+  color: var(--text);
+}
+
+#ds-date {
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+#ds-date:focus { outline: none; border-color: var(--accent); }
+
+#ds-copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-light);
+  transition: background 0.12s, color 0.12s;
+}
+
+#ds-copy-btn:hover { background: var(--accent); color: #fff; }
+
+#ds-day-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+#ds-empty {
+  font-size: 14px;
+  color: var(--text-muted);
+  padding: 16px 0 4px;
+}
+
+.ds-row {
+  display: grid;
+  grid-template-columns: 1fr 100px 90px;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.ds-row:last-child { border-bottom: none; }
+
+.ds-col-head {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  padding-bottom: 4px;
+}
+
+.ds-project {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  overflow: hidden;
+}
+
+.ds-project span:last-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ds-actual { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+.ds-payroll {
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.ds-total-row {
+  font-weight: 700;
+  color: var(--text);
+  border-top: 2px solid var(--border) !important;
+  margin-top: 2px;
+  padding-top: 10px !important;
+}
+
+.ds-total-row .ds-payroll { font-size: 15px; }
+
+/* =============================
    Timesheets
    ============================= */
 #timesheet-filters {
@@ -1193,8 +1334,32 @@ ul { list-style: none; }
 
       <!-- TIMESHEETS TAB -->
       <section id="tab-timesheets" class="tab-content">
+
+        <!-- Daily Summary -->
+        <div id="daily-summary-card">
+          <div id="ds-header">
+            <h2>Daily Summary</h2>
+            <div id="ds-date-nav">
+              <button id="ds-prev" title="Previous day">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <input type="date" id="ds-date" />
+              <button id="ds-next" title="Next day">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+            <button id="ds-copy-btn" title="Copy summary to clipboard">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy
+            </button>
+          </div>
+          <div id="ds-day-label"></div>
+          <div id="ds-table"></div>
+          <div id="ds-empty" class="hidden">No completed entries for this day.</div>
+        </div>
+
         <div class="tab-header">
-          <h1>Timesheets</h1>
+          <h1>All Entries</h1>
           <div id="timesheet-filters">
             <select id="ts-filter-period">
               <option value="week">This Week</option>
@@ -1998,6 +2163,116 @@ function deleteEntry(id) {
 }
 
 // =====================
+// Daily Summary
+// =====================
+let dailySummaryDate = formatDateInput(Date.now());
+
+function roundToQuarterMs(ms) {
+  const q = 15 * 60000;
+  return Math.round(ms / q) * q;
+}
+
+function formatDecimalHours(ms) {
+  return (ms / 3600000).toFixed(2) + 'h';
+}
+
+function getDaySummaryRows(dateStr) {
+  const dayStart = new Date(dateStr + 'T00:00:00').getTime();
+  const dayEnd   = dayStart + 86400000;
+  const dayEntries = entries.filter(e => e.clockIn >= dayStart && e.clockIn < dayEnd && e.clockOut);
+
+  const projMap = {};
+  dayEntries.forEach(e => {
+    const pid = e.projectId || 'default';
+    projMap[pid] = (projMap[pid] || 0) + (e.clockOut - e.clockIn);
+  });
+
+  return Object.entries(projMap)
+    .map(([pid, ms]) => ({ proj: getProjectById(pid), ms, rounded: roundToQuarterMs(ms) }))
+    .sort((a, b) => b.ms - a.ms);
+}
+
+function renderDailySummary() {
+  const dateStr = dailySummaryDate;
+  document.getElementById('ds-date').value = dateStr;
+
+  const dateLabel = new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+  });
+  document.getElementById('ds-day-label').textContent = dateLabel;
+
+  const rows  = getDaySummaryRows(dateStr);
+  const table = document.getElementById('ds-table');
+  const empty = document.getElementById('ds-empty');
+  table.innerHTML = '';
+
+  if (rows.length === 0) {
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  // Column headers
+  const head = document.createElement('div');
+  head.className = 'ds-row';
+  head.innerHTML = `
+    <span class="ds-col-head">Project</span>
+    <span class="ds-col-head">Actual</span>
+    <span class="ds-col-head">Payroll (¼h)</span>`;
+  table.appendChild(head);
+
+  let totalMs = 0, totalRounded = 0;
+  rows.forEach(({ proj, ms, rounded }) => {
+    totalMs      += ms;
+    totalRounded += rounded;
+    const row = document.createElement('div');
+    row.className = 'ds-row';
+    row.innerHTML = `
+      <span class="ds-project">
+        <span class="project-dot" style="background:${proj.color}"></span>
+        <span>${escHtml(proj.name)}</span>
+      </span>
+      <span class="ds-actual">${formatDuration(ms)}</span>
+      <span class="ds-payroll">${formatDecimalHours(rounded)}</span>`;
+    table.appendChild(row);
+  });
+
+  const total = document.createElement('div');
+  total.className = 'ds-row ds-total-row';
+  total.innerHTML = `
+    <span>Total</span>
+    <span class="ds-actual">${formatDuration(totalMs)}</span>
+    <span class="ds-payroll">${formatDecimalHours(totalRounded)}</span>`;
+  table.appendChild(total);
+}
+
+function copyDailySummary() {
+  const rows = getDaySummaryRows(dailySummaryDate);
+  if (rows.length === 0) return;
+
+  const dateLabel = new Date(dailySummaryDate + 'T12:00:00').toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+  });
+
+  let totalRounded = 0;
+  let text = `Daily Summary — ${dateLabel}\n`;
+  rows.forEach(({ proj, rounded }) => {
+    totalRounded += rounded;
+    text += `${proj.name}: ${formatDecimalHours(rounded)}\n`;
+  });
+  text += `Total: ${formatDecimalHours(totalRounded)}`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('ds-copy-btn');
+    const orig = btn.innerHTML;
+    btn.innerHTML = 'Copied!';
+    btn.style.background = 'var(--success)';
+    btn.style.color = '#fff';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; btn.style.color = ''; }, 2000);
+  });
+}
+
+// =====================
 // Backup / Restore JSON
 // =====================
 function backupData() {
@@ -2034,7 +2309,7 @@ function restoreData(file) {
       rebuildOverviewFilter();
       rebuildTsProjectFilter();
       if (document.querySelector('#tab-overview.active'))   renderOverview();
-      if (document.querySelector('#tab-timesheets.active')) renderTimesheets();
+      if (document.querySelector('#tab-timesheets.active')) { renderDailySummary(); renderTimesheets(); }
       alert('Data restored successfully!');
     } catch {
       alert('Could not read the file — make sure it\'s a valid Tclock backup.');
@@ -2094,7 +2369,7 @@ function switchTab(tabId) {
   document.querySelectorAll('.nav-item').forEach(li => li.classList.toggle('active', li.dataset.tab === tabId));
   document.querySelectorAll('.tab-content').forEach(s => s.classList.toggle('active', s.id === 'tab-' + tabId));
   if (tabId === 'overview')   renderOverview();
-  if (tabId === 'timesheets') renderTimesheets();
+  if (tabId === 'timesheets') { renderDailySummary(); renderTimesheets(); }
 }
 
 // =====================
@@ -2143,6 +2418,25 @@ function init() {
   document.getElementById('pp-new-confirm').addEventListener('click', e => { e.stopPropagation(); confirmNewProject(); });
   document.getElementById('pp-new-cancel').addEventListener('click',  e => { e.stopPropagation(); hideNewProjectForm(); });
   document.getElementById('pp-new-name').addEventListener('keydown', e => { if (e.key === 'Enter') confirmNewProject(); if (e.key === 'Escape') hideNewProjectForm(); });
+
+  // Daily summary navigation
+  document.getElementById('ds-date').addEventListener('change', e => {
+    dailySummaryDate = e.target.value;
+    renderDailySummary();
+  });
+  document.getElementById('ds-prev').addEventListener('click', () => {
+    const d = new Date(dailySummaryDate + 'T12:00:00');
+    d.setDate(d.getDate() - 1);
+    dailySummaryDate = formatDateInput(d.getTime());
+    renderDailySummary();
+  });
+  document.getElementById('ds-next').addEventListener('click', () => {
+    const d = new Date(dailySummaryDate + 'T12:00:00');
+    d.setDate(d.getDate() + 1);
+    dailySummaryDate = formatDateInput(d.getTime());
+    renderDailySummary();
+  });
+  document.getElementById('ds-copy-btn').addEventListener('click', copyDailySummary);
 
   // Timesheets filters
   document.getElementById('ts-filter-period').addEventListener('change', renderTimesheets);
