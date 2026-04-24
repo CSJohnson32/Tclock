@@ -197,8 +197,32 @@
 
       <!-- TIMESHEETS TAB -->
       <section id="tab-timesheets" class="tab-content">
+
+        <!-- Daily Summary -->
+        <div id="daily-summary-card">
+          <div id="ds-header">
+            <h2>Daily Summary</h2>
+            <div id="ds-date-nav">
+              <button id="ds-prev" title="Previous day">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <input type="date" id="ds-date" />
+              <button id="ds-next" title="Next day">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+            <button id="ds-copy-btn" title="Copy summary to clipboard">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy
+            </button>
+          </div>
+          <div id="ds-day-label"></div>
+          <div id="ds-table"></div>
+          <div id="ds-empty" class="hidden">No completed entries for this day.</div>
+        </div>
+
         <div class="tab-header">
-          <h1>Timesheets</h1>
+          <h1>All Entries</h1>
           <div id="timesheet-filters">
             <select id="ts-filter-period">
               <option value="week">This Week</option>

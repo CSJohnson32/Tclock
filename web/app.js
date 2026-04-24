@@ -732,6 +732,116 @@ function deleteEntry(id) {
 }
 
 // =====================
+// Daily Summary
+// =====================
+let dailySummaryDate = formatDateInput(Date.now());
+
+function roundToQuarterMs(ms) {
+  const q = 15 * 60000;
+  return Math.round(ms / q) * q;
+}
+
+function formatDecimalHours(ms) {
+  return (ms / 3600000).toFixed(2) + 'h';
+}
+
+function getDaySummaryRows(dateStr) {
+  const dayStart = new Date(dateStr + 'T00:00:00').getTime();
+  const dayEnd   = dayStart + 86400000;
+  const dayEntries = entries.filter(e => e.clockIn >= dayStart && e.clockIn < dayEnd && e.clockOut);
+
+  const projMap = {};
+  dayEntries.forEach(e => {
+    const pid = e.projectId || 'default';
+    projMap[pid] = (projMap[pid] || 0) + (e.clockOut - e.clockIn);
+  });
+
+  return Object.entries(projMap)
+    .map(([pid, ms]) => ({ proj: getProjectById(pid), ms, rounded: roundToQuarterMs(ms) }))
+    .sort((a, b) => b.ms - a.ms);
+}
+
+function renderDailySummary() {
+  const dateStr = dailySummaryDate;
+  document.getElementById('ds-date').value = dateStr;
+
+  const dateLabel = new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+  });
+  document.getElementById('ds-day-label').textContent = dateLabel;
+
+  const rows  = getDaySummaryRows(dateStr);
+  const table = document.getElementById('ds-table');
+  const empty = document.getElementById('ds-empty');
+  table.innerHTML = '';
+
+  if (rows.length === 0) {
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  // Column headers
+  const head = document.createElement('div');
+  head.className = 'ds-row';
+  head.innerHTML = `
+    <span class="ds-col-head">Project</span>
+    <span class="ds-col-head">Actual</span>
+    <span class="ds-col-head">Payroll (¼h)</span>`;
+  table.appendChild(head);
+
+  let totalMs = 0, totalRounded = 0;
+  rows.forEach(({ proj, ms, rounded }) => {
+    totalMs      += ms;
+    totalRounded += rounded;
+    const row = document.createElement('div');
+    row.className = 'ds-row';
+    row.innerHTML = `
+      <span class="ds-project">
+        <span class="project-dot" style="background:${proj.color}"></span>
+        <span>${escHtml(proj.name)}</span>
+      </span>
+      <span class="ds-actual">${formatDuration(ms)}</span>
+      <span class="ds-payroll">${formatDecimalHours(rounded)}</span>`;
+    table.appendChild(row);
+  });
+
+  const total = document.createElement('div');
+  total.className = 'ds-row ds-total-row';
+  total.innerHTML = `
+    <span>Total</span>
+    <span class="ds-actual">${formatDuration(totalMs)}</span>
+    <span class="ds-payroll">${formatDecimalHours(totalRounded)}</span>`;
+  table.appendChild(total);
+}
+
+function copyDailySummary() {
+  const rows = getDaySummaryRows(dailySummaryDate);
+  if (rows.length === 0) return;
+
+  const dateLabel = new Date(dailySummaryDate + 'T12:00:00').toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+  });
+
+  let totalRounded = 0;
+  let text = `Daily Summary — ${dateLabel}\n`;
+  rows.forEach(({ proj, rounded }) => {
+    totalRounded += rounded;
+    text += `${proj.name}: ${formatDecimalHours(rounded)}\n`;
+  });
+  text += `Total: ${formatDecimalHours(totalRounded)}`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('ds-copy-btn');
+    const orig = btn.innerHTML;
+    btn.innerHTML = 'Copied!';
+    btn.style.background = 'var(--success)';
+    btn.style.color = '#fff';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; btn.style.color = ''; }, 2000);
+  });
+}
+
+// =====================
 // Backup / Restore JSON
 // =====================
 function backupData() {
@@ -768,7 +878,7 @@ function restoreData(file) {
       rebuildOverviewFilter();
       rebuildTsProjectFilter();
       if (document.querySelector('#tab-overview.active'))   renderOverview();
-      if (document.querySelector('#tab-timesheets.active')) renderTimesheets();
+      if (document.querySelector('#tab-timesheets.active')) { renderDailySummary(); renderTimesheets(); }
       alert('Data restored successfully!');
     } catch {
       alert('Could not read the file — make sure it\'s a valid Tclock backup.');
@@ -828,7 +938,7 @@ function switchTab(tabId) {
   document.querySelectorAll('.nav-item').forEach(li => li.classList.toggle('active', li.dataset.tab === tabId));
   document.querySelectorAll('.tab-content').forEach(s => s.classList.toggle('active', s.id === 'tab-' + tabId));
   if (tabId === 'overview')   renderOverview();
-  if (tabId === 'timesheets') renderTimesheets();
+  if (tabId === 'timesheets') { renderDailySummary(); renderTimesheets(); }
 }
 
 // =====================
@@ -877,6 +987,25 @@ function init() {
   document.getElementById('pp-new-confirm').addEventListener('click', e => { e.stopPropagation(); confirmNewProject(); });
   document.getElementById('pp-new-cancel').addEventListener('click',  e => { e.stopPropagation(); hideNewProjectForm(); });
   document.getElementById('pp-new-name').addEventListener('keydown', e => { if (e.key === 'Enter') confirmNewProject(); if (e.key === 'Escape') hideNewProjectForm(); });
+
+  // Daily summary navigation
+  document.getElementById('ds-date').addEventListener('change', e => {
+    dailySummaryDate = e.target.value;
+    renderDailySummary();
+  });
+  document.getElementById('ds-prev').addEventListener('click', () => {
+    const d = new Date(dailySummaryDate + 'T12:00:00');
+    d.setDate(d.getDate() - 1);
+    dailySummaryDate = formatDateInput(d.getTime());
+    renderDailySummary();
+  });
+  document.getElementById('ds-next').addEventListener('click', () => {
+    const d = new Date(dailySummaryDate + 'T12:00:00');
+    d.setDate(d.getDate() + 1);
+    dailySummaryDate = formatDateInput(d.getTime());
+    renderDailySummary();
+  });
+  document.getElementById('ds-copy-btn').addEventListener('click', copyDailySummary);
 
   // Timesheets filters
   document.getElementById('ts-filter-period').addEventListener('change', renderTimesheets);
