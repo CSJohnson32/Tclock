@@ -1,19 +1,27 @@
-'use strict';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  onAuthStateChanged, signOut
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import {
+  initializeFirestore, persistentLocalCache,
+  collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // =====================
-// Storage helpers
+// Firebase Setup
 // =====================
-const store = {
-  get: (key, fallback) => {
-    try {
-      const v = localStorage.getItem('tclock_' + key);
-      return v !== null ? JSON.parse(v) : fallback;
-    } catch { return fallback; }
-  },
-  set: (key, val) => {
-    try { localStorage.setItem('tclock_' + key, JSON.stringify(val)); } catch {}
-  }
+const firebaseConfig = {
+  apiKey: "AIzaSyDilfuNR2-wMRUzNd2mkp2efXErlqzZ0G8",
+  authDomain: "tclock-a199a.firebaseapp.com",
+  projectId: "tclock-a199a",
+  storageBucket: "tclock-a199a.firebasestorage.app",
+  messagingSenderId: "1060722054462",
+  appId: "1:1060722054462:web:52a7caf0d252832b3b086f"
 };
+const firebaseApp = initializeApp(firebaseConfig);
+const auth        = getAuth(firebaseApp);
+const db          = initializeFirestore(firebaseApp, { localCache: persistentLocalCache({}) });
 
 // =====================
 // Constants
@@ -29,21 +37,89 @@ const PALETTE = [
 // =====================
 // State
 // =====================
-let entries        = store.get('entries', []);
-let projects       = store.get('projects', [DEFAULT_PROJECT]);
-let activeSession  = store.get('session', null);   // {clockIn, projectId} | null
-let isDark         = store.get('theme', false);
-let currentProjectId = store.get('currentProject', 'default');
-let tcWindow       = 'day';    // time card window
-let ovProjectId    = 'all';    // overview project filter
-let editingId      = null;
+let entries          = [];
+let projects         = [DEFAULT_PROJECT];
+let activeSession    = null;
+let isDark           = false;
+let currentProjectId = 'default';
+let tcWindow         = 'day';
+let ovProjectId      = 'all';
+let editingId        = null;
+let currentUser      = null;
+let unsubscribers    = [];
+let authMode         = 'signin';
+
+// =====================
+// Firestore Refs
+// =====================
+const entriesCol  = () => collection(db, 'users', currentUser.uid, 'entries');
+const projectsCol = () => collection(db, 'users', currentUser.uid, 'projects');
+const entryRef    = id => doc(db, 'users', currentUser.uid, 'entries', id);
+const projectRef  = id => doc(db, 'users', currentUser.uid, 'projects', id);
+const sessionRef  = () => doc(db, 'users', currentUser.uid, 'meta', 'session');
+
+// =====================
+// Firestore Listeners
+// =====================
+function setupListeners() {
+  const unsubE = onSnapshot(entriesCol(), snap => {
+    entries = snap.docs.map(d => d.data());
+    entries.sort((a, b) => b.clockIn - a.clockIn);
+    renderTimeCard();
+    const active = document.querySelector('.tab-content.active');
+    if (active?.id === 'tab-overview')   renderOverview();
+    if (active?.id === 'tab-timesheets') { renderDailySummary(); renderTimesheets(); }
+  });
+
+  const unsubP = onSnapshot(projectsCol(), snap => {
+    const custom = snap.docs.map(d => d.data());
+    projects = [DEFAULT_PROJECT, ...custom.sort((a, b) => a.name.localeCompare(b.name))];
+    renderTimeCard();
+    rebuildOverviewFilter();
+    rebuildTsProjectFilter();
+    const active = document.querySelector('.tab-content.active');
+    if (active?.id === 'tab-overview')   renderOverview();
+    if (active?.id === 'tab-timesheets') { renderDailySummary(); renderTimesheets(); }
+  });
+
+  const unsubS = onSnapshot(sessionRef(), snap => {
+    activeSession = snap.exists() ? snap.data() : null;
+    renderTimeCard();
+  });
+
+  unsubscribers = [unsubE, unsubP, unsubS];
+}
+
+function teardownListeners() {
+  unsubscribers.forEach(fn => fn());
+  unsubscribers = [];
+  entries = [];
+  projects = [DEFAULT_PROJECT];
+  activeSession = null;
+}
+
+// =====================
+// localStorage data migration (runs once per user)
+// =====================
+async function migrateLocalStorage() {
+  const key = 'tclock_migrated_' + currentUser.uid;
+  if (localStorage.getItem(key)) return;
+  const parse = k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
+  const lsE = parse('tclock_entries');
+  const lsP = parse('tclock_projects');
+  if (!Array.isArray(lsE) && !Array.isArray(lsP)) { localStorage.setItem(key, '1'); return; }
+  try {
+    const batch = writeBatch(db);
+    (lsE || []).forEach(e => { if (e?.id) batch.set(entryRef(e.id), e); });
+    (lsP || []).filter(p => p?.id && p.id !== 'default').forEach(p => batch.set(projectRef(p.id), p));
+    await batch.commit();
+    localStorage.setItem(key, '1');
+  } catch (err) { console.error('Migration error:', err); }
+}
 
 // Ensure default project is always present
 function ensureDefaultProject() {
-  if (!projects.find(p => p.id === 'default')) {
-    projects.unshift(DEFAULT_PROJECT);
-    store.set('projects', projects);
-  }
+  if (!projects.find(p => p.id === 'default')) projects.unshift(DEFAULT_PROJECT);
 }
 
 function getProjectById(id) {
@@ -57,25 +133,23 @@ function entryProject(e) {
 // =====================
 // Project CRUD
 // =====================
-function addProject(name, color) {
+async function addProject(name, color) {
   const id = 'p_' + Date.now().toString(36);
   const proj = { id, name: name.trim(), color };
-  projects.push(proj);
-  store.set('projects', projects);
+  await setDoc(projectRef(id), proj);
   return proj;
 }
 
-function deleteProject(id) {
+async function deleteProject(id) {
   if (id === 'default') return;
-  projects = projects.filter(p => p.id !== id);
-  store.set('projects', projects);
-  // Reassign entries to default
-  entries.forEach(e => { if ((e.projectId || 'default') === id) e.projectId = 'default'; });
-  store.set('entries', entries);
-  // Reset current project if it was deleted
+  const batch = writeBatch(db);
+  batch.delete(projectRef(id));
+  entries.filter(e => (e.projectId || 'default') === id)
+         .forEach(e => batch.set(entryRef(e.id), { ...e, projectId: 'default' }));
+  await batch.commit();
   if (currentProjectId === id) {
     currentProjectId = 'default';
-    store.set('currentProject', 'default');
+    localStorage.setItem('tclock_currentProject', 'default');
   }
   if (ovProjectId === id) ovProjectId = 'all';
 }
@@ -192,27 +266,23 @@ function getProjectSessionCount(projectId, window) {
 // =====================
 // Clock In / Out
 // =====================
-function clockIn() {
-  activeSession = { clockIn: Date.now(), projectId: currentProjectId };
-  store.set('session', activeSession);
-  renderTimeCard();
+async function clockIn() {
+  await setDoc(sessionRef(), { clockIn: Date.now(), projectId: currentProjectId });
 }
 
-function clockOut() {
+async function clockOut() {
   if (!activeSession) return;
-  entries.unshift({
+  const entry = {
     id: generateId(),
     clockIn: activeSession.clockIn,
     clockOut: Date.now(),
     projectId: activeSession.projectId || 'default',
     note: ''
-  });
-  store.set('entries', entries);
-  activeSession = null;
-  store.set('session', null);
-  renderTimeCard();
-  if (document.querySelector('#tab-overview.active')) renderOverview();
-  if (document.querySelector('#tab-timesheets.active')) renderTimesheets();
+  };
+  const batch = writeBatch(db);
+  batch.set(entryRef(entry.id), entry);
+  batch.delete(sessionRef());
+  await batch.commit();
 }
 
 // =====================
@@ -279,20 +349,14 @@ function renderPickerList(query) {
         const nameInput  = li.querySelector('.pp-edit-name');
         const colorInput = li.querySelector('.pp-edit-color');
 
-        const doSave = () => {
+        const doSave = async () => {
           const name = nameInput.value.trim();
           if (!name) { nameInput.focus(); return; }
-          p.name  = name;
-          p.color = colorInput.value;
-          store.set('projects', projects);
           editingProjectId = null;
           renderPickerList(document.getElementById('pp-search').value);
-          if (p.id === currentProjectId) {
-            document.getElementById('ps-dot').style.background = p.color;
-            document.getElementById('ps-name').textContent = p.name;
+          if (p.id !== 'default') {
+            await setDoc(projectRef(p.id), { ...p, name, color: colorInput.value });
           }
-          rebuildOverviewFilter();
-          rebuildTsProjectFilter();
         };
 
         li.querySelector('.pp-edit-save').addEventListener('click', e => { e.stopPropagation(); doSave(); });
@@ -338,14 +402,10 @@ function renderPickerList(query) {
 
         const delBtn = li.querySelector('.pp-item-delete');
         if (delBtn) {
-          delBtn.addEventListener('click', e => {
+          delBtn.addEventListener('click', async e => {
             e.stopPropagation();
             if (confirm(`Delete "${p.name}"? Its entries will move to General.`)) {
-              deleteProject(p.id);
-              renderPickerList(document.getElementById('pp-search').value);
-              renderTimeCard();
-              rebuildOverviewFilter();
-              rebuildTsProjectFilter();
+              await deleteProject(p.id);
             }
           });
         }
@@ -357,7 +417,7 @@ function renderPickerList(query) {
 
 function selectProject(id) {
   currentProjectId = id;
-  store.set('currentProject', id);
+  localStorage.setItem('tclock_currentProject', id);
   closeProjectPicker();
   renderTimeCard();
 }
@@ -376,14 +436,12 @@ function hideNewProjectForm() {
   document.getElementById('pp-new-trigger').classList.remove('hidden');
 }
 
-function confirmNewProject() {
+async function confirmNewProject() {
   const name = document.getElementById('pp-new-name').value.trim();
   if (!name) return;
   const color = document.getElementById('pp-new-color').value;
-  const proj = addProject(name, color);
+  const proj = await addProject(name, color);
   selectProject(proj.id);
-  rebuildOverviewFilter();
-  rebuildTsProjectFilter();
 }
 
 // =====================
@@ -700,35 +758,28 @@ function closeModal() {
   editingId = null;
 }
 
-function saveModal() {
+async function saveModal() {
   if (!editingId) return;
   const entry = entries.find(e => e.id === editingId);
   if (!entry) return;
-
   const dateStr = document.getElementById('edit-date').value;
   const inStr   = document.getElementById('edit-clock-in').value;
   const outStr  = document.getElementById('edit-clock-out').value;
-
   if (!dateStr || !inStr) return;
-
-  entry.projectId = document.getElementById('edit-project').value;
-  entry.clockIn   = new Date(`${dateStr}T${inStr}:00`).getTime();
-  entry.clockOut  = outStr ? new Date(`${dateStr}T${outStr}:00`).getTime() : null;
-  entry.note      = document.getElementById('edit-note').value.trim();
-
-  entries.sort((a, b) => b.clockIn - a.clockIn);
-  store.set('entries', entries);
+  const updated = {
+    ...entry,
+    projectId: document.getElementById('edit-project').value,
+    clockIn:   new Date(`${dateStr}T${inStr}:00`).getTime(),
+    clockOut:  outStr ? new Date(`${dateStr}T${outStr}:00`).getTime() : null,
+    note:      document.getElementById('edit-note').value.trim()
+  };
+  await setDoc(entryRef(editingId), updated);
   closeModal();
-  renderTimesheets();
-  if (document.querySelector('#tab-overview.active')) renderOverview();
 }
 
-function deleteEntry(id) {
+async function deleteEntry(id) {
   if (!confirm('Delete this time entry?')) return;
-  entries = entries.filter(e => e.id !== id);
-  store.set('entries', entries);
-  renderTimesheets();
-  renderTimeCard();
+  await deleteDoc(entryRef(id));
 }
 
 // =====================
@@ -856,7 +907,7 @@ function backupData() {
 
 function restoreData(file) {
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = async e => {
     try {
       const data = JSON.parse(e.target.result);
       if (!Array.isArray(data.entries) || !Array.isArray(data.projects)) {
@@ -864,24 +915,19 @@ function restoreData(file) {
         return;
       }
       if (!confirm(`This will replace all current data with the backup from ${new Date(data.exportedAt).toLocaleDateString()}.\n\nContinue?`)) return;
-
-      entries  = data.entries;
-      projects = data.projects;
-      ensureDefaultProject();
-      if (!projects.find(p => p.id === currentProjectId)) currentProjectId = 'default';
-
-      store.set('entries',  entries);
-      store.set('projects', projects);
-      store.set('currentProject', currentProjectId);
-
-      renderTimeCard();
-      rebuildOverviewFilter();
-      rebuildTsProjectFilter();
-      if (document.querySelector('#tab-overview.active'))   renderOverview();
-      if (document.querySelector('#tab-timesheets.active')) { renderDailySummary(); renderTimesheets(); }
+      const batch = writeBatch(db);
+      entries.forEach(en => batch.delete(entryRef(en.id)));
+      projects.filter(p => p.id !== 'default').forEach(p => batch.delete(projectRef(p.id)));
+      data.entries.forEach(en => { if (en?.id) batch.set(entryRef(en.id), en); });
+      data.projects.filter(p => p?.id && p.id !== 'default').forEach(p => batch.set(projectRef(p.id), p));
+      await batch.commit();
+      if (!data.projects.find(p => p.id === currentProjectId)) {
+        currentProjectId = 'default';
+        localStorage.setItem('tclock_currentProject', 'default');
+      }
       alert('Data restored successfully!');
     } catch {
-      alert('Could not read the file — make sure it\'s a valid Tclock backup.');
+      alert("Could not read the file — make sure it's a valid Tclock backup.");
     }
   };
   reader.readAsText(file);
@@ -942,18 +988,82 @@ function switchTab(tabId) {
 }
 
 // =====================
+// Auth helpers
+// =====================
+function showAuthOverlay(showForm) {
+  document.getElementById('auth-overlay').classList.remove('hidden');
+  document.getElementById('app').classList.add('app-hidden');
+  document.getElementById('auth-loading').classList.toggle('hidden', showForm);
+  document.getElementById('auth-card').classList.toggle('hidden', !showForm);
+}
+
+function hideAuthOverlay() {
+  document.getElementById('auth-overlay').classList.add('hidden');
+  document.getElementById('app').classList.remove('app-hidden');
+}
+
+function setAuthMode(mode) {
+  authMode = mode;
+  document.querySelectorAll('.auth-tab').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  document.getElementById('auth-submit').textContent = mode === 'signin' ? 'Sign In' : 'Create Account';
+  document.getElementById('auth-error').classList.add('hidden');
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+function authErrMsg(code) {
+  return ({
+    'auth/user-not-found':       'No account found with this email.',
+    'auth/wrong-password':       'Incorrect password.',
+    'auth/email-already-in-use': 'An account with this email already exists.',
+    'auth/weak-password':        'Password must be at least 6 characters.',
+    'auth/invalid-email':        'Please enter a valid email address.',
+    'auth/invalid-credential':   'Incorrect email or password.',
+    'auth/too-many-requests':    'Too many attempts. Try again later.',
+    'auth/network-request-failed': 'Network error. Check your connection.'
+  })[code] || 'Something went wrong. Please try again.';
+}
+
+async function handleAuthSubmit() {
+  const email    = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if (!email || !password) { showAuthError('Please enter your email and password.'); return; }
+  const btn = document.getElementById('auth-submit');
+  btn.disabled = true;
+  btn.textContent = authMode === 'signin' ? 'Signing in…' : 'Creating account…';
+  document.getElementById('auth-error').classList.add('hidden');
+  try {
+    if (authMode === 'signin') await signInWithEmailAndPassword(auth, email, password);
+    else                       await createUserWithEmailAndPassword(auth, email, password);
+  } catch (err) {
+    showAuthError(authErrMsg(err.code));
+    btn.disabled = false;
+    btn.textContent = authMode === 'signin' ? 'Sign In' : 'Create Account';
+  }
+}
+
+// =====================
 // Init
 // =====================
 function init() {
-  ensureDefaultProject();
-
-  // Validate currentProjectId still exists
-  if (!projects.find(p => p.id === currentProjectId)) {
-    currentProjectId = 'default';
-    store.set('currentProject', 'default');
-  }
-
+  dailySummaryDate = formatDateInput(Date.now());
+  isDark = (() => { try { return JSON.parse(localStorage.getItem('tclock_theme') || 'false'); } catch { return false; } })();
   applyTheme(isDark);
+
+  // Auth UI
+  document.querySelectorAll('.auth-tab').forEach(btn => btn.addEventListener('click', () => setAuthMode(btn.dataset.mode)));
+  document.getElementById('auth-submit').addEventListener('click', handleAuthSubmit);
+  document.getElementById('auth-email').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('auth-password').focus(); });
+  document.getElementById('auth-password').addEventListener('keydown', e => { if (e.key === 'Enter') handleAuthSubmit(); });
+
+  // Sign out
+  document.getElementById('signout-btn').addEventListener('click', async () => {
+    if (confirm('Sign out of Tclock?')) await signOut(auth);
+  });
 
   // Tab nav
   document.querySelectorAll('.nav-item').forEach(li => li.addEventListener('click', () => switchTab(li.dataset.tab)));
@@ -971,39 +1081,27 @@ function init() {
   });
 
   // Project selector
-  const selectorBtn = document.getElementById('project-selector-btn');
-  selectorBtn.addEventListener('click', e => {
+  document.getElementById('project-selector-btn').addEventListener('click', e => {
     e.stopPropagation();
     pickerOpen ? closeProjectPicker() : openProjectPicker();
   });
-
   document.getElementById('project-picker').addEventListener('click', e => e.stopPropagation());
-
   document.addEventListener('click', () => { if (pickerOpen) closeProjectPicker(); });
-
   document.getElementById('pp-search').addEventListener('input', e => renderPickerList(e.target.value));
-
   document.getElementById('pp-new-trigger').addEventListener('click', e => { e.stopPropagation(); showNewProjectForm(); });
   document.getElementById('pp-new-confirm').addEventListener('click', e => { e.stopPropagation(); confirmNewProject(); });
   document.getElementById('pp-new-cancel').addEventListener('click',  e => { e.stopPropagation(); hideNewProjectForm(); });
   document.getElementById('pp-new-name').addEventListener('keydown', e => { if (e.key === 'Enter') confirmNewProject(); if (e.key === 'Escape') hideNewProjectForm(); });
 
-  // Daily summary navigation
-  document.getElementById('ds-date').addEventListener('change', e => {
-    dailySummaryDate = e.target.value;
-    renderDailySummary();
-  });
+  // Daily summary
+  document.getElementById('ds-date').addEventListener('change', e => { dailySummaryDate = e.target.value; renderDailySummary(); });
   document.getElementById('ds-prev').addEventListener('click', () => {
-    const d = new Date(dailySummaryDate + 'T12:00:00');
-    d.setDate(d.getDate() - 1);
-    dailySummaryDate = formatDateInput(d.getTime());
-    renderDailySummary();
+    const d = new Date(dailySummaryDate + 'T12:00:00'); d.setDate(d.getDate() - 1);
+    dailySummaryDate = formatDateInput(d.getTime()); renderDailySummary();
   });
   document.getElementById('ds-next').addEventListener('click', () => {
-    const d = new Date(dailySummaryDate + 'T12:00:00');
-    d.setDate(d.getDate() + 1);
-    dailySummaryDate = formatDateInput(d.getTime());
-    renderDailySummary();
+    const d = new Date(dailySummaryDate + 'T12:00:00'); d.setDate(d.getDate() + 1);
+    dailySummaryDate = formatDateInput(d.getTime()); renderDailySummary();
   });
   document.getElementById('ds-copy-btn').addEventListener('click', copyDailySummary);
 
@@ -1017,30 +1115,46 @@ function init() {
   document.getElementById('modal-save').addEventListener('click', saveModal);
   document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target.id === 'modal-overlay') closeModal(); });
 
-  // Backup / Restore
+  // Backup / Restore / Export
   document.getElementById('backup-btn').addEventListener('click', backupData);
   document.getElementById('restore-btn').addEventListener('click', () => document.getElementById('restore-file-input').click());
   document.getElementById('restore-file-input').addEventListener('change', e => {
     if (e.target.files[0]) { restoreData(e.target.files[0]); e.target.value = ''; }
   });
-
-  // Export / Theme
   document.getElementById('export-btn').addEventListener('click', exportCSV);
+
+  // Theme
   document.getElementById('theme-toggle').addEventListener('click', () => {
     isDark = !isDark;
-    store.set('theme', isDark);
+    localStorage.setItem('tclock_theme', JSON.stringify(isDark));
     applyTheme(isDark);
   });
 
-  // Initial render
-  renderTimeCard();
+  // Tick
   tick();
   setInterval(tick, 1000);
-
   setInterval(() => {
-    const active = document.querySelector('.tab-content.active');
-    if (active?.id === 'tab-overview') renderOverview();
+    if (currentUser && document.querySelector('.tab-content.active')?.id === 'tab-overview') renderOverview();
   }, 60000);
+
+  // Show loading spinner while Firebase resolves auth state
+  showAuthOverlay(false);
+
+  // Firebase auth state observer
+  onAuthStateChanged(auth, async user => {
+    if (user) {
+      currentUser = user;
+      currentProjectId = localStorage.getItem('tclock_currentProject') || 'default';
+      hideAuthOverlay();
+      await migrateLocalStorage();
+      setupListeners();
+    } else {
+      teardownListeners();
+      currentUser = null;
+      showAuthOverlay(true);
+      setAuthMode('signin');
+    }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', init);
