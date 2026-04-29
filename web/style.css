@@ -1331,6 +1331,51 @@ ul { list-style: none; }
   color: var(--text);
 }
 
+/* Task checkboxes in project form */
+.task-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.12s;
+}
+
+.task-checkbox-label:hover { background: var(--surface-alt); }
+.task-checkbox-label input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0; }
+
+.pf-custom-hdr {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin: 12px 0 6px;
+}
+
+.pf-custom-task-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.pf-custom-task-row input {
+  flex: 1;
+  min-width: 80px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.pf-custom-task-row input:focus { outline: none; border-color: var(--accent); }
+
 /* Session Note Field
    ============================= */
 #session-note-wrap {

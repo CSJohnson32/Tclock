@@ -325,6 +325,17 @@
             <label>Project Name</label>
             <input type="text" id="pf-name" placeholder="SR-132 Imprv MP 38.1 to Nebo Loop Rd CEM" maxlength="120" />
           </div>
+          <!-- Per-project task setup -->
+          <div class="form-group">
+            <label>Tasks for this project</label>
+            <div id="pf-task-list"></div>
+          </div>
+          <div class="pf-custom-task-row">
+            <input type="text" id="pf-task-code" placeholder="Code (e.g. 99C)" maxlength="10" />
+            <input type="text" id="pf-task-name" placeholder="Custom task name" maxlength="80" />
+            <button id="pf-add-task-btn" class="btn-secondary btn-sm">+ Add Custom</button>
+          </div>
+
           <div class="modal-actions">
             <button id="pf-cancel" class="btn-secondary">Cancel</button>
             <button id="pf-save" class="btn-primary">Save Project</button>
@@ -337,27 +348,6 @@
           <div id="project-list-empty" class="empty-state hidden">
             <p>No projects yet. Click "+ Add Project" to get started.</p>
           </div>
-        </div>
-
-        <!-- Task list -->
-        <div id="task-section">
-          <div class="tab-header" style="margin-top:32px">
-            <h2>Task List</h2>
-            <button id="add-task-btn" class="btn-secondary btn-sm">+ Add Task</button>
-          </div>
-          <div id="task-form" class="hidden" style="display:flex;gap:8px;margin-bottom:16px;align-items:flex-end">
-            <div class="form-group" style="flex:0 0 100px;margin:0">
-              <label>Code</label>
-              <input type="text" id="tf-code" placeholder="99C" maxlength="10" />
-            </div>
-            <div class="form-group" style="flex:1;margin:0">
-              <label>Name</label>
-              <input type="text" id="tf-name" placeholder="Task description" maxlength="80" />
-            </div>
-            <button id="tf-save" class="btn-primary btn-sm">Add</button>
-            <button id="tf-cancel" class="btn-secondary btn-sm">✕</button>
-          </div>
-          <div id="task-list"></div>
         </div>
       </section>
 

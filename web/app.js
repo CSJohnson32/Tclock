@@ -53,11 +53,10 @@ let projects         = [DEFAULT_PROJECT];
 let activeSession    = null;
 let isDark           = false;
 let currentProjectId = 'default';
+let currentTaskId    = '';
 let tcWindow         = 'day';
 let ovProjectId      = 'all';
 let editingId        = null;
-let tasks            = [...DEFAULT_TASKS];
-let currentTaskId    = '';
 let currentUser      = null;
 let unsubscribers    = [];
 let authMode         = 'signin';
@@ -68,10 +67,8 @@ let pendingSwitchProjectId = null;
 // =====================
 const entriesCol  = () => collection(db, 'users', currentUser.uid, 'entries');
 const projectsCol = () => collection(db, 'users', currentUser.uid, 'projects');
-const tasksCol    = () => collection(db, 'users', currentUser.uid, 'tasks');
 const entryRef    = id => doc(db, 'users', currentUser.uid, 'entries', id);
 const projectRef  = id => doc(db, 'users', currentUser.uid, 'projects', id);
-const taskRef     = id => doc(db, 'users', currentUser.uid, 'tasks', id);
 const sessionRef  = () => doc(db, 'users', currentUser.uid, 'meta', 'session');
 
 // =====================
@@ -90,6 +87,7 @@ function setupListeners() {
   const unsubP = onSnapshot(projectsCol(), snap => {
     const custom = snap.docs.map(d => d.data());
     projects = [DEFAULT_PROJECT, ...custom.sort((a, b) => a.name.localeCompare(b.name))];
+    rebuildTaskSelector();
     renderTimeCard();
     rebuildOverviewFilter();
     rebuildTsProjectFilter();
@@ -98,20 +96,12 @@ function setupListeners() {
     if (active?.id === 'tab-timesheets') { renderDailySummary(); renderTimesheets(); }
   });
 
-  const unsubT = onSnapshot(tasksCol(), snap => {
-    if (snap.empty) return;
-    tasks = snap.docs.map(d => d.data()).sort((a, b) => a.code.localeCompare(b.code));
-    rebuildTaskSelector();
-    const active = document.querySelector('.tab-content.active');
-    if (active?.id === 'tab-projects') renderProjects();
-  });
-
   const unsubS = onSnapshot(sessionRef(), snap => {
     activeSession = snap.exists() ? snap.data() : null;
     renderTimeCard();
   });
 
-  unsubscribers = [unsubE, unsubP, unsubT, unsubS];
+  unsubscribers = [unsubE, unsubP, unsubS];
 }
 
 function teardownListeners() {
@@ -119,39 +109,22 @@ function teardownListeners() {
   unsubscribers = [];
   entries = [];
   projects = [DEFAULT_PROJECT];
-  tasks = [...DEFAULT_TASKS];
   activeSession = null;
 }
 
 // =====================
-// Task helpers
+// Task helpers (per-project)
 // =====================
-function getTaskById(id) { return tasks.find(t => t.id === id) || null; }
+function getTaskById(taskId) {
+  if (!taskId) return null;
+  for (const p of projects) {
+    const t = (p.tasks || []).find(t => t.id === taskId);
+    if (t) return t;
+  }
+  return DEFAULT_TASKS.find(t => t.id === taskId) || null;
+}
+
 function getTaskLabel(task) { return task ? `${task.code} — ${task.name}` : '—'; }
-
-// =====================
-// Task CRUD
-// =====================
-async function addTask(code, name) {
-  const id = 't_' + Date.now().toString(36);
-  await setDoc(taskRef(id), { id, code: code.trim().toUpperCase(), name: name.trim() });
-}
-
-async function deleteTask(id) {
-  await deleteDoc(taskRef(id));
-  if (currentTaskId === id) { currentTaskId = ''; rebuildTaskSelector(); }
-}
-
-async function updateTask(id, code, name) {
-  const t = getTaskById(id);
-  if (t) await setDoc(taskRef(id), { ...t, code: code.trim().toUpperCase(), name: name.trim() });
-}
-
-async function setupDefaultTasks() {
-  const batch = writeBatch(db);
-  DEFAULT_TASKS.forEach(t => batch.set(taskRef(t.id), t));
-  await batch.commit();
-}
 
 // =====================
 // localStorage data migration (runs once per user)
@@ -167,7 +140,6 @@ async function migrateLocalStorage() {
     (lsE || []).forEach(e => { if (e?.id) batch.set(entryRef(e.id), e); });
     (lsP || []).filter(p => p?.id && p.id !== 'default').forEach(p => batch.set(projectRef(p.id), p));
     await batch.commit();
-    await setupDefaultTasks();
     localStorage.setItem(key, '1');
   } catch (err) { console.error('Migration error:', err); }
 }
@@ -193,13 +165,6 @@ function entryProject(e) {
 // =====================
 // Project CRUD
 // =====================
-async function addProject(number, name, color) {
-  const id = 'p_' + Date.now().toString(36);
-  const proj = { id, number: number.trim(), name: name.trim(), color };
-  await setDoc(projectRef(id), proj);
-  return proj;
-}
-
 async function deleteProject(id) {
   if (id === 'default') return;
   const batch = writeBatch(db);
@@ -388,15 +353,16 @@ function updateTCWindowStats() {
 function rebuildTaskSelector() {
   const sel = document.getElementById('task-selector');
   if (!sel) return;
-  const prev = sel.value;
+  const proj = getProjectById(currentProjectId);
+  const projTasks = proj.tasks || [];
   sel.innerHTML = '<option value="">— Select Task —</option>';
-  tasks.forEach(t => {
+  projTasks.forEach(t => {
     const opt = document.createElement('option');
     opt.value = t.id;
     opt.textContent = `${t.code} — ${t.name}`;
     sel.appendChild(opt);
   });
-  sel.value = tasks.find(t => t.id === prev) ? prev : (tasks.find(t => t.id === currentTaskId) ? currentTaskId : '');
+  sel.value = projTasks.find(t => t.id === currentTaskId) ? currentTaskId : '';
   currentTaskId = sel.value;
 }
 
@@ -520,7 +486,10 @@ function selectProject(id) {
     return;
   }
   currentProjectId = id;
+  currentTaskId    = '';
   localStorage.setItem('tclock_currentProject', id);
+  localStorage.removeItem('tclock_currentTask');
+  rebuildTaskSelector();
   renderTimeCard();
 }
 
@@ -553,7 +522,10 @@ async function confirmSwitchProject() {
   batch.set(sessionRef(), newSession);
   await batch.commit();
   currentProjectId = pendingSwitchProjectId;
+  currentTaskId    = '';
   localStorage.setItem('tclock_currentProject', pendingSwitchProjectId);
+  localStorage.removeItem('tclock_currentTask');
+  rebuildTaskSelector();
   closeSwitchDialog();
   const f = document.getElementById('session-note');
   if (f) f.value = '';
@@ -574,7 +546,10 @@ async function switchDialogClockOut() {
   batch.delete(sessionRef());
   await batch.commit();
   currentProjectId = pendingSwitchProjectId;
+  currentTaskId    = '';
   localStorage.setItem('tclock_currentProject', pendingSwitchProjectId);
+  localStorage.removeItem('tclock_currentTask');
+  rebuildTaskSelector();
   closeSwitchDialog();
   const f = document.getElementById('session-note');
   if (f) f.value = '';
@@ -598,9 +573,10 @@ async function confirmNewProject() {
   const name   = document.getElementById('pp-new-name').value.trim();
   const number = document.getElementById('pp-new-number').value.trim();
   if (!name) return;
-  const color = document.getElementById('pp-new-color').value;
-  const proj = await addProject(number, name, color);
-  selectProject(proj.id);
+  const color  = document.getElementById('pp-new-color').value;
+  const id     = 'p_' + Date.now().toString(36);
+  await setDoc(projectRef(id), { id, number, name, color, tasks: [] });
+  selectProject(id);
 }
 
 // =====================
@@ -1177,6 +1153,50 @@ function escHtml(s) {
 // Render: Projects Page
 // =====================
 let editingProjectFormId = null;
+let formTasks = []; // tasks being built in the open project form
+
+function renderTaskFormSection() {
+  const container = document.getElementById('pf-task-list');
+  if (!container) return;
+  container.innerHTML = '';
+
+  // Standard tasks as checkboxes
+  DEFAULT_TASKS.forEach(dt => {
+    const checked = formTasks.some(t => t.id === dt.id);
+    const label = document.createElement('label');
+    label.className = 'task-checkbox-label';
+    label.innerHTML = `
+      <input type="checkbox" value="${dt.id}" ${checked ? 'checked' : ''} />
+      <span class="task-code">${escHtml(dt.code)}</span> — ${escHtml(dt.name)}`;
+    label.querySelector('input').addEventListener('change', e => {
+      if (e.target.checked) { if (!formTasks.some(t => t.id === dt.id)) formTasks.push({ ...dt }); }
+      else { formTasks = formTasks.filter(t => t.id !== dt.id); }
+    });
+    container.appendChild(label);
+  });
+
+  // Custom tasks
+  const custom = formTasks.filter(t => !DEFAULT_TASKS.some(d => d.id === t.id));
+  if (custom.length) {
+    const hdr = document.createElement('div');
+    hdr.className = 'pf-custom-hdr';
+    hdr.textContent = 'Custom tasks:';
+    container.appendChild(hdr);
+    custom.forEach(t => {
+      const row = document.createElement('div');
+      row.className = 'task-list-row';
+      row.innerHTML = `
+        <span class="task-code">${escHtml(t.code)}</span>
+        <span class="task-name">${escHtml(t.name)}</span>
+        <button class="ts-btn ts-btn-delete" style="flex-shrink:0">✕</button>`;
+      row.querySelector('button').addEventListener('click', () => {
+        formTasks = formTasks.filter(f => f.id !== t.id);
+        renderTaskFormSection();
+      });
+      container.appendChild(row);
+    });
+  }
+}
 
 function renderProjects() {
   // Project list
@@ -1211,38 +1231,26 @@ function renderProjects() {
     }));
   }
 
-  // Task list
-  const taskList = document.getElementById('task-list');
-  taskList.innerHTML = '';
-  tasks.forEach(t => {
-    const row = document.createElement('div');
-    row.className = 'task-list-row';
-    row.innerHTML = `
-      <span class="task-code">${escHtml(t.code)}</span>
-      <span class="task-name">${escHtml(t.name)}</span>
-      <div class="proj-list-actions">
-        ${DEFAULT_TASKS.find(d => d.id === t.id) ? '' : `<button class="ts-btn ts-btn-delete" data-id="${t.id}">Delete</button>`}
-      </div>`;
-    taskList.appendChild(row);
-  });
-  taskList.querySelectorAll('.ts-btn-delete').forEach(btn => btn.addEventListener('click', async () => {
-    if (confirm('Delete this task?')) await deleteTask(btn.dataset.id);
-  }));
 }
 
 function openProjectForm(id) {
   editingProjectFormId = id || null;
   const p = id ? projects.find(x => x.id === id) : null;
+  formTasks = p?.tasks ? [...p.tasks] : [];
   document.getElementById('project-form-title').textContent = p ? 'Edit Project' : 'New Project';
   document.getElementById('pf-number').value = p?.number || '';
   document.getElementById('pf-name').value   = p?.name   || '';
   document.getElementById('pf-color').value  = p?.color  || '#3b82f6';
+  document.getElementById('pf-task-code').value = '';
+  document.getElementById('pf-task-name').value = '';
   document.getElementById('project-form-card').classList.remove('hidden');
+  renderTaskFormSection();
   document.getElementById('pf-number').focus();
 }
 
 function closeProjectForm() {
   editingProjectFormId = null;
+  formTasks = [];
   document.getElementById('project-form-card').classList.add('hidden');
 }
 
@@ -1251,12 +1259,13 @@ async function saveProjectForm() {
   const name   = document.getElementById('pf-name').value.trim();
   const color  = document.getElementById('pf-color').value;
   if (!name) { document.getElementById('pf-name').focus(); return; }
-
+  const tasks = [...formTasks];
   if (editingProjectFormId) {
     const p = projects.find(x => x.id === editingProjectFormId);
-    if (p) await setDoc(projectRef(p.id), { ...p, number, name, color });
+    if (p) await setDoc(projectRef(p.id), { ...p, number, name, color, tasks });
   } else {
-    await addProject(number, name, color);
+    const id = 'p_' + Date.now().toString(36);
+    await setDoc(projectRef(id), { id, number, name, color, tasks });
   }
   closeProjectForm();
 }
@@ -1351,25 +1360,15 @@ function init() {
   document.getElementById('pf-save').addEventListener('click', saveProjectForm);
   document.getElementById('pf-name').addEventListener('keydown', e => { if (e.key === 'Enter') saveProjectForm(); });
 
-  // Task form
-  document.getElementById('add-task-btn').addEventListener('click', () => {
-    document.getElementById('task-form').classList.remove('hidden');
-    document.getElementById('task-form').style.display = 'flex';
-    document.getElementById('tf-code').focus();
-  });
-  document.getElementById('tf-cancel').addEventListener('click', () => {
-    document.getElementById('task-form').classList.add('hidden');
-    document.getElementById('tf-code').value = '';
-    document.getElementById('tf-name').value = '';
-  });
-  document.getElementById('tf-save').addEventListener('click', async () => {
-    const code = document.getElementById('tf-code').value.trim();
-    const name = document.getElementById('tf-name').value.trim();
+  // Custom task add button inside project form
+  document.getElementById('pf-add-task-btn').addEventListener('click', () => {
+    const code = document.getElementById('pf-task-code').value.trim().toUpperCase();
+    const name = document.getElementById('pf-task-name').value.trim();
     if (!code || !name) return;
-    await addTask(code, name);
-    document.getElementById('task-form').classList.add('hidden');
-    document.getElementById('tf-code').value = '';
-    document.getElementById('tf-name').value = '';
+    formTasks.push({ id: 'tc_' + Date.now().toString(36), code, name });
+    document.getElementById('pf-task-code').value = '';
+    document.getElementById('pf-task-name').value = '';
+    renderTaskFormSection();
   });
 
   // Switch project modal
