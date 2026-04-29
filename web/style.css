@@ -523,7 +523,7 @@ ul { list-style: none; }
 .btn-clock {
   font-size: 16px;
   padding: 16px 48px;
-  margin-bottom: 28px;
+  margin-bottom: 0;
 }
 
 .btn-clock.clocked-in {
@@ -1415,19 +1415,43 @@ ul { list-style: none; }
   display: flex;
   gap: 10px;
   align-items: stretch;
+  margin-bottom: 28px;
 }
 
 #clock-btn-row #clock-btn {
   flex: 1;
 }
 
-#clock-btn-row .btn-switch {
-  flex: 0 0 auto;
+.btn-switch {
+  flex: 1;
+  border-radius: 50px;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 16px 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   white-space: nowrap;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  background: var(--success);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(34,197,94,.35);
 }
 
+.btn-switch:hover:not(:disabled) {
+  background: #16a34a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34,197,94,.4);
+}
+
+.btn-switch:active:not(:disabled) { transform: translateY(0); }
+
 .btn-switch:disabled {
-  opacity: 0.4;
+  background: var(--surface-alt);
+  color: var(--text-muted);
+  box-shadow: none;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
