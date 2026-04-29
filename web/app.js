@@ -28,6 +28,17 @@ const db          = initializeFirestore(firebaseApp, { localCache: persistentLoc
 // =====================
 const DEFAULT_PROJECT = { id: 'default', name: 'General', color: '#3b82f6' };
 
+const DEFAULT_TASKS = [
+  { id: 't85c', code: '85C', name: 'Preconstruction Activities' },
+  { id: 't87c', code: '87C', name: 'Construction Engineering Management' },
+  { id: 't89c', code: '89C', name: 'Project Administration' },
+  { id: 't91c', code: '91C', name: 'Field Inspection' },
+  { id: 't93c', code: '93C', name: 'Materials Testing' },
+  { id: 't95c', code: '95C', name: 'Public Involvement' },
+  { id: 't97c', code: '97C', name: 'QC/QA Control' },
+  { id: 't99c', code: '99C', name: 'Construction Closeout' }
+];
+
 const PALETTE = [
   '#3b82f6','#10b981','#f59e0b','#ef4444',
   '#8b5cf6','#ec4899','#06b6d4','#f97316',
@@ -45,6 +56,8 @@ let currentProjectId = 'default';
 let tcWindow         = 'day';
 let ovProjectId      = 'all';
 let editingId        = null;
+let tasks            = [...DEFAULT_TASKS];
+let currentTaskId    = '';
 let currentUser      = null;
 let unsubscribers    = [];
 let authMode         = 'signin';
@@ -55,8 +68,10 @@ let pendingSwitchProjectId = null;
 // =====================
 const entriesCol  = () => collection(db, 'users', currentUser.uid, 'entries');
 const projectsCol = () => collection(db, 'users', currentUser.uid, 'projects');
+const tasksCol    = () => collection(db, 'users', currentUser.uid, 'tasks');
 const entryRef    = id => doc(db, 'users', currentUser.uid, 'entries', id);
 const projectRef  = id => doc(db, 'users', currentUser.uid, 'projects', id);
+const taskRef     = id => doc(db, 'users', currentUser.uid, 'tasks', id);
 const sessionRef  = () => doc(db, 'users', currentUser.uid, 'meta', 'session');
 
 // =====================
@@ -83,12 +98,20 @@ function setupListeners() {
     if (active?.id === 'tab-timesheets') { renderDailySummary(); renderTimesheets(); }
   });
 
+  const unsubT = onSnapshot(tasksCol(), snap => {
+    if (snap.empty) return;
+    tasks = snap.docs.map(d => d.data()).sort((a, b) => a.code.localeCompare(b.code));
+    rebuildTaskSelector();
+    const active = document.querySelector('.tab-content.active');
+    if (active?.id === 'tab-projects') renderProjects();
+  });
+
   const unsubS = onSnapshot(sessionRef(), snap => {
     activeSession = snap.exists() ? snap.data() : null;
     renderTimeCard();
   });
 
-  unsubscribers = [unsubE, unsubP, unsubS];
+  unsubscribers = [unsubE, unsubP, unsubT, unsubS];
 }
 
 function teardownListeners() {
@@ -96,7 +119,38 @@ function teardownListeners() {
   unsubscribers = [];
   entries = [];
   projects = [DEFAULT_PROJECT];
+  tasks = [...DEFAULT_TASKS];
   activeSession = null;
+}
+
+// =====================
+// Task helpers
+// =====================
+function getTaskById(id) { return tasks.find(t => t.id === id) || null; }
+function getTaskLabel(task) { return task ? `${task.code} — ${task.name}` : '—'; }
+
+// =====================
+// Task CRUD
+// =====================
+async function addTask(code, name) {
+  const id = 't_' + Date.now().toString(36);
+  await setDoc(taskRef(id), { id, code: code.trim().toUpperCase(), name: name.trim() });
+}
+
+async function deleteTask(id) {
+  await deleteDoc(taskRef(id));
+  if (currentTaskId === id) { currentTaskId = ''; rebuildTaskSelector(); }
+}
+
+async function updateTask(id, code, name) {
+  const t = getTaskById(id);
+  if (t) await setDoc(taskRef(id), { ...t, code: code.trim().toUpperCase(), name: name.trim() });
+}
+
+async function setupDefaultTasks() {
+  const batch = writeBatch(db);
+  DEFAULT_TASKS.forEach(t => batch.set(taskRef(t.id), t));
+  await batch.commit();
 }
 
 // =====================
@@ -108,12 +162,12 @@ async function migrateLocalStorage() {
   const parse = k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
   const lsE = parse('tclock_entries');
   const lsP = parse('tclock_projects');
-  if (!Array.isArray(lsE) && !Array.isArray(lsP)) { localStorage.setItem(key, '1'); return; }
   try {
     const batch = writeBatch(db);
     (lsE || []).forEach(e => { if (e?.id) batch.set(entryRef(e.id), e); });
     (lsP || []).filter(p => p?.id && p.id !== 'default').forEach(p => batch.set(projectRef(p.id), p));
     await batch.commit();
+    await setupDefaultTasks();
     localStorage.setItem(key, '1');
   } catch (err) { console.error('Migration error:', err); }
 }
@@ -127,6 +181,11 @@ function getProjectById(id) {
   return projects.find(p => p.id === id) || DEFAULT_PROJECT;
 }
 
+function getProjectLabel(proj) {
+  if (!proj) return 'General';
+  return proj.number ? `${proj.number} — ${proj.name}` : proj.name;
+}
+
 function entryProject(e) {
   return getProjectById(e.projectId || 'default');
 }
@@ -134,9 +193,9 @@ function entryProject(e) {
 // =====================
 // Project CRUD
 // =====================
-async function addProject(name, color) {
+async function addProject(number, name, color) {
   const id = 'p_' + Date.now().toString(36);
-  const proj = { id, name: name.trim(), color };
+  const proj = { id, number: number.trim(), name: name.trim(), color };
   await setDoc(projectRef(id), proj);
   return proj;
 }
@@ -268,7 +327,7 @@ function getProjectSessionCount(projectId, window) {
 // Clock In / Out
 // =====================
 async function clockIn() {
-  await setDoc(sessionRef(), { clockIn: Date.now(), projectId: currentProjectId });
+  await setDoc(sessionRef(), { clockIn: Date.now(), projectId: currentProjectId, taskId: currentTaskId });
 }
 
 function getSessionNote() {
@@ -292,6 +351,7 @@ async function clockOut(noteOverride) {
     clockIn: activeSession.clockIn,
     clockOut: Date.now(),
     projectId: activeSession.projectId || 'default',
+    taskId: activeSession.taskId || '',
     note
   };
   const batch = writeBatch(db);
@@ -320,6 +380,24 @@ function updateTCWindowStats() {
   const ms = getProjectWindowMs(currentProjectId, tcWindow);
   document.getElementById('project-window-total').textContent = formatDuration(ms);
   document.getElementById('today-sessions').textContent = getProjectSessionCount(currentProjectId, tcWindow);
+}
+
+// =====================
+// Task Selector
+// =====================
+function rebuildTaskSelector() {
+  const sel = document.getElementById('task-selector');
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">— Select Task —</option>';
+  tasks.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.id;
+    opt.textContent = `${t.code} — ${t.name}`;
+    sel.appendChild(opt);
+  });
+  sel.value = tasks.find(t => t.id === prev) ? prev : (tasks.find(t => t.id === currentTaskId) ? currentTaskId : '');
+  currentTaskId = sel.value;
 }
 
 // =====================
@@ -395,7 +473,7 @@ function renderPickerList(query) {
         li.className = 'pp-item' + (p.id === currentProjectId ? ' active' : '');
         li.innerHTML = `
           <span class="project-dot" style="background:${p.color}"></span>
-          <span class="pp-item-name">${escHtml(p.name)}</span>
+          <span class="pp-item-name">${escHtml(getProjectLabel(p))}</span>
           ${p.id !== 'default' ? `
             <div class="pp-item-actions">
               <button class="pp-item-edit"   title="Rename project">✏</button>
@@ -466,9 +544,10 @@ async function confirmSwitchProject() {
     clockIn: activeSession.clockIn,
     clockOut: Date.now(),
     projectId: activeSession.projectId || 'default',
+    taskId: activeSession.taskId || '',
     note
   };
-  const newSession = { clockIn: Date.now(), projectId: pendingSwitchProjectId };
+  const newSession = { clockIn: Date.now(), projectId: pendingSwitchProjectId, taskId: currentTaskId };
   const batch = writeBatch(db);
   batch.set(entryRef(entry.id), entry);
   batch.set(sessionRef(), newSession);
@@ -487,6 +566,7 @@ async function switchDialogClockOut() {
     clockIn: activeSession.clockIn,
     clockOut: Date.now(),
     projectId: activeSession.projectId || 'default',
+    taskId: activeSession.taskId || '',
     note
   };
   const batch = writeBatch(db);
@@ -515,10 +595,11 @@ function hideNewProjectForm() {
 }
 
 async function confirmNewProject() {
-  const name = document.getElementById('pp-new-name').value.trim();
+  const name   = document.getElementById('pp-new-name').value.trim();
+  const number = document.getElementById('pp-new-number').value.trim();
   if (!name) return;
   const color = document.getElementById('pp-new-color').value;
-  const proj = await addProject(name, color);
+  const proj = await addProject(number, name, color);
   selectProject(proj.id);
 }
 
@@ -537,7 +618,9 @@ function renderTimeCard() {
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
       Clock Out`;
     const sessionProj = getProjectById(activeSession.projectId || 'default');
-    statusText.textContent = `Clocked in · ${sessionProj.name} · since ${formatTime(activeSession.clockIn)}`;
+    const sessionTask = getTaskById(activeSession.taskId || '');
+    const taskPart = sessionTask ? ` · ${sessionTask.code}` : '';
+    statusText.textContent = `Clocked in · ${sessionProj.name}${taskPart} · since ${formatTime(activeSession.clockIn)}`;
     elapsedDiv.classList.remove('hidden');
     panel.classList.add('clocked-in');
   } else {
@@ -557,7 +640,7 @@ function renderTimeCard() {
   // Update project selector button
   const proj = getProjectById(currentProjectId);
   document.getElementById('ps-dot').style.background = proj.color;
-  document.getElementById('ps-name').textContent = proj.name;
+  document.getElementById('ps-name').textContent = getProjectLabel(proj);
 
   // Date display
   document.getElementById('current-date-display').textContent =
@@ -788,10 +871,11 @@ function renderTimesheets() {
         : '<em style="color:var(--success)">In progress</em>';
       const row = document.createElement('div');
       row.className = 'ts-entry';
+      const entTask = getTaskById(e.taskId || '');
       row.innerHTML = `
         <span class="ts-entry-project">
           <span class="project-dot" style="background:${proj.color}"></span>
-          <span class="ts-entry-project-name">${escHtml(proj.name)}</span>
+          <span class="ts-entry-project-name">${escHtml(getProjectLabel(proj))}${entTask ? ' · ' + escHtml(entTask.code) : ''}</span>
         </span>
         <span class="ts-entry-time">${formatTime(e.clockIn)}</span>
         <span class="ts-entry-time">${e.clockOut ? formatTime(e.clockOut) : '–'}</span>
@@ -823,10 +907,21 @@ function openEditModal(id) {
   projects.forEach(p => {
     const opt = document.createElement('option');
     opt.value = p.id;
-    opt.textContent = p.name;
+    opt.textContent = getProjectLabel(p);
     sel.appendChild(opt);
   });
   sel.value = entry.projectId || 'default';
+
+  // Populate task select
+  const tsel = document.getElementById('edit-task');
+  tsel.innerHTML = '<option value="">— No Task —</option>';
+  tasks.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.id;
+    opt.textContent = `${t.code} — ${t.name}`;
+    tsel.appendChild(opt);
+  });
+  tsel.value = entry.taskId || '';
 
   document.getElementById('edit-date').value      = formatDateInput(entry.clockIn);
   document.getElementById('edit-clock-in').value  = formatTimeInput(entry.clockIn);
@@ -851,6 +946,7 @@ async function saveModal() {
   const updated = {
     ...entry,
     projectId: document.getElementById('edit-project').value,
+    taskId:    document.getElementById('edit-task').value,
     clockIn:   new Date(`${dateStr}T${inStr}:00`).getTime(),
     clockOut:  outStr ? new Date(`${dateStr}T${outStr}:00`).getTime() : null,
     note:      document.getElementById('edit-note').value.trim()
@@ -883,17 +979,19 @@ function getDaySummaryRows(dateStr) {
   const dayEnd   = dayStart + 86400000;
   const dayEntries = entries.filter(e => e.clockIn >= dayStart && e.clockIn < dayEnd && e.clockOut);
 
-  const projMap = {};
+  const lineMap = {};
   dayEntries.forEach(e => {
-    const pid = e.projectId || 'default';
-    if (!projMap[pid]) projMap[pid] = { ms: 0, notes: [] };
-    projMap[pid].ms += (e.clockOut - e.clockIn);
-    if (e.note) projMap[pid].notes.push(e.note);
+    const key = `${e.projectId || 'default'}||${e.taskId || ''}`;
+    if (!lineMap[key]) lineMap[key] = { projectId: e.projectId || 'default', taskId: e.taskId || '', ms: 0, notes: [] };
+    lineMap[key].ms += (e.clockOut - e.clockIn);
+    if (e.note) lineMap[key].notes.push(e.note);
   });
 
-  return Object.entries(projMap)
-    .map(([pid, { ms, notes }]) => ({
-      proj: getProjectById(pid), ms, rounded: roundToQuarterMs(ms),
+  return Object.values(lineMap)
+    .map(({ projectId, taskId, ms, notes }) => ({
+      proj: getProjectById(projectId),
+      task: getTaskById(taskId),
+      ms, rounded: roundToQuarterMs(ms),
       notes: [...new Set(notes)]
     }))
     .sort((a, b) => b.ms - a.ms);
@@ -929,15 +1027,17 @@ function renderDailySummary() {
   table.appendChild(head);
 
   let totalMs = 0, totalRounded = 0;
-  rows.forEach(({ proj, ms, rounded, notes }) => {
+  rows.forEach(({ proj, task, ms, rounded, notes }) => {
     totalMs      += ms;
     totalRounded += rounded;
     const row = document.createElement('div');
     row.className = 'ds-row';
+    const projLabel = proj.number ? `${proj.number}` : proj.name;
+    const taskLabel = task ? `${task.code} — ${task.name}` : '(no task)';
     row.innerHTML = `
       <span class="ds-project">
         <span class="project-dot" style="background:${proj.color}"></span>
-        <span>${escHtml(proj.name)}</span>
+        <span><strong>${escHtml(projLabel)}</strong> · ${escHtml(taskLabel)}</span>
       </span>
       <span class="ds-actual">${formatDuration(ms)}</span>
       <span class="ds-payroll">${formatDecimalHours(rounded)}</span>`;
@@ -969,9 +1069,12 @@ function copyDailySummary() {
 
   let totalRounded = 0;
   let text = `Daily Summary — ${dateLabel}\n`;
-  rows.forEach(({ proj, rounded }) => {
+  rows.forEach(({ proj, task, rounded, notes }) => {
     totalRounded += rounded;
-    text += `${proj.name}: ${formatDecimalHours(rounded)}\n`;
+    const projLabel = proj.number || proj.name;
+    const taskLabel = task ? task.code : '';
+    const notePart  = notes.length ? ` — ${notes.join('; ')}` : '';
+    text += `${projLabel}${taskLabel ? ' ' + taskLabel : ''}: ${formatDecimalHours(rounded)}${notePart}\n`;
   });
   text += `Total: ${formatDecimalHours(totalRounded)}`;
 
@@ -1071,6 +1174,94 @@ function escHtml(s) {
 }
 
 // =====================
+// Render: Projects Page
+// =====================
+let editingProjectFormId = null;
+
+function renderProjects() {
+  // Project list
+  const list  = document.getElementById('project-list');
+  const empty = document.getElementById('project-list-empty');
+  const customProjects = projects.filter(p => p.id !== 'default');
+  list.innerHTML = '';
+  if (customProjects.length === 0) {
+    empty.classList.remove('hidden');
+  } else {
+    empty.classList.add('hidden');
+    customProjects.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'proj-list-row';
+      row.innerHTML = `
+        <span class="project-dot project-dot-lg" style="background:${p.color}"></span>
+        <span class="proj-list-number">${escHtml(p.number || '')}</span>
+        <span class="proj-list-name">${escHtml(p.name)}</span>
+        <div class="proj-list-actions">
+          <button class="ts-btn ts-btn-edit" data-id="${p.id}">Edit</button>
+          <button class="ts-btn ts-btn-delete" data-id="${p.id}">Delete</button>
+        </div>`;
+      list.appendChild(row);
+    });
+    list.querySelectorAll('.ts-btn-edit').forEach(btn => btn.addEventListener('click', () => openProjectForm(btn.dataset.id)));
+    list.querySelectorAll('.ts-btn-delete').forEach(btn => btn.addEventListener('click', async () => {
+      const p = projects.find(x => x.id === btn.dataset.id);
+      if (!p) return;
+      if (confirm(`Delete "${p.number ? p.number + ' — ' : ''}${p.name}"? Its entries will move to General.`)) {
+        await deleteProject(p.id);
+      }
+    }));
+  }
+
+  // Task list
+  const taskList = document.getElementById('task-list');
+  taskList.innerHTML = '';
+  tasks.forEach(t => {
+    const row = document.createElement('div');
+    row.className = 'task-list-row';
+    row.innerHTML = `
+      <span class="task-code">${escHtml(t.code)}</span>
+      <span class="task-name">${escHtml(t.name)}</span>
+      <div class="proj-list-actions">
+        ${DEFAULT_TASKS.find(d => d.id === t.id) ? '' : `<button class="ts-btn ts-btn-delete" data-id="${t.id}">Delete</button>`}
+      </div>`;
+    taskList.appendChild(row);
+  });
+  taskList.querySelectorAll('.ts-btn-delete').forEach(btn => btn.addEventListener('click', async () => {
+    if (confirm('Delete this task?')) await deleteTask(btn.dataset.id);
+  }));
+}
+
+function openProjectForm(id) {
+  editingProjectFormId = id || null;
+  const p = id ? projects.find(x => x.id === id) : null;
+  document.getElementById('project-form-title').textContent = p ? 'Edit Project' : 'New Project';
+  document.getElementById('pf-number').value = p?.number || '';
+  document.getElementById('pf-name').value   = p?.name   || '';
+  document.getElementById('pf-color').value  = p?.color  || '#3b82f6';
+  document.getElementById('project-form-card').classList.remove('hidden');
+  document.getElementById('pf-number').focus();
+}
+
+function closeProjectForm() {
+  editingProjectFormId = null;
+  document.getElementById('project-form-card').classList.add('hidden');
+}
+
+async function saveProjectForm() {
+  const number = document.getElementById('pf-number').value.trim();
+  const name   = document.getElementById('pf-name').value.trim();
+  const color  = document.getElementById('pf-color').value;
+  if (!name) { document.getElementById('pf-name').focus(); return; }
+
+  if (editingProjectFormId) {
+    const p = projects.find(x => x.id === editingProjectFormId);
+    if (p) await setDoc(projectRef(p.id), { ...p, number, name, color });
+  } else {
+    await addProject(number, name, color);
+  }
+  closeProjectForm();
+}
+
+// =====================
 // Tab Navigation
 // =====================
 function switchTab(tabId) {
@@ -1078,6 +1269,7 @@ function switchTab(tabId) {
   document.querySelectorAll('.tab-content').forEach(s => s.classList.toggle('active', s.id === 'tab-' + tabId));
   if (tabId === 'overview')   renderOverview();
   if (tabId === 'timesheets') { renderDailySummary(); renderTimesheets(); }
+  if (tabId === 'projects')   renderProjects();
 }
 
 // =====================
@@ -1153,6 +1345,33 @@ function init() {
   document.getElementById('auth-email').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('auth-password').focus(); });
   document.getElementById('auth-password').addEventListener('keydown', e => { if (e.key === 'Enter') handleAuthSubmit(); });
 
+  // Projects page
+  document.getElementById('add-project-btn').addEventListener('click', () => openProjectForm(null));
+  document.getElementById('pf-cancel').addEventListener('click', closeProjectForm);
+  document.getElementById('pf-save').addEventListener('click', saveProjectForm);
+  document.getElementById('pf-name').addEventListener('keydown', e => { if (e.key === 'Enter') saveProjectForm(); });
+
+  // Task form
+  document.getElementById('add-task-btn').addEventListener('click', () => {
+    document.getElementById('task-form').classList.remove('hidden');
+    document.getElementById('task-form').style.display = 'flex';
+    document.getElementById('tf-code').focus();
+  });
+  document.getElementById('tf-cancel').addEventListener('click', () => {
+    document.getElementById('task-form').classList.add('hidden');
+    document.getElementById('tf-code').value = '';
+    document.getElementById('tf-name').value = '';
+  });
+  document.getElementById('tf-save').addEventListener('click', async () => {
+    const code = document.getElementById('tf-code').value.trim();
+    const name = document.getElementById('tf-name').value.trim();
+    if (!code || !name) return;
+    await addTask(code, name);
+    document.getElementById('task-form').classList.add('hidden');
+    document.getElementById('tf-code').value = '';
+    document.getElementById('tf-name').value = '';
+  });
+
   // Switch project modal
   document.getElementById('switch-cancel-btn').addEventListener('click', closeSwitchDialog);
   document.getElementById('switch-clockout-btn').addEventListener('click', switchDialogClockOut);
@@ -1179,6 +1398,12 @@ function init() {
     tcWindow = btn.dataset.window;
     document.querySelectorAll('#tc-window-control .seg-btn').forEach(b => b.classList.toggle('active', b === btn));
     updateTCWindowStats();
+  });
+
+  // Task selector
+  document.getElementById('task-selector').addEventListener('change', e => {
+    currentTaskId = e.target.value;
+    localStorage.setItem('tclock_currentTask', currentTaskId);
   });
 
   // Project selector
@@ -1246,6 +1471,7 @@ function init() {
     if (user) {
       currentUser = user;
       currentProjectId = localStorage.getItem('tclock_currentProject') || 'default';
+      currentTaskId    = localStorage.getItem('tclock_currentTask') || '';
       hideAuthOverlay();
       await migrateLocalStorage();
       setupListeners();

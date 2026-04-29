@@ -1237,7 +1237,101 @@ ul { list-style: none; }
 }
 
 /* =============================
-   Session Note Field
+   Task Selector
+   ============================= */
+#task-selector-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+#task-selector {
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  max-width: 320px;
+  width: 100%;
+}
+
+#task-selector:focus { outline: none; border-color: var(--accent); }
+
+/* =============================
+   Projects Page
+   ============================= */
+#project-form-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+}
+
+#project-form-card h2 { font-size: 16px; font-weight: 700; margin-bottom: 18px; }
+
+.proj-list-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+}
+
+.proj-list-number {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+  min-width: 90px;
+}
+
+.proj-list-name {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.proj-list-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Task list rows */
+.task-list-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+}
+
+.task-code {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 44px;
+}
+
+.task-name {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text);
+}
+
+/* Session Note Field
    ============================= */
 #session-note-wrap {
   width: 100%;
