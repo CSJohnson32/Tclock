@@ -1244,6 +1244,79 @@ ul { list-style: none; }
   margin-top: 4px;
 }
 
+/* =============================
+   Session Note Field
+   ============================= */
+#session-note-wrap {
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto 12px;
+}
+
+#session-note {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  resize: vertical;
+  min-height: 60px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+#session-note:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+}
+
+#session-note.field-error {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(239,68,68,.2);
+}
+
+/* =============================
+   Switch Project Modal
+   ============================= */
+#switch-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(3px);
+}
+
+#switch-modal {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 28px;
+  width: 400px;
+  max-width: 90vw;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
+}
+
+#switch-modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+#switch-modal p  { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5; }
+#switch-modal p strong { color: var(--text); }
+
+/* =============================
+   Daily Summary Notes Row
+   ============================= */
+.ds-notes-row {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 2px 0 8px 22px;
+  line-height: 1.5;
+  grid-column: 1 / -1;
+}
+
 </style>
 </head>
 <body>
@@ -1374,6 +1447,9 @@ ul { list-style: none; }
           <div id="elapsed-display" class="hidden">
             <div class="elapsed-label">Current Session</div>
             <div id="elapsed-time">00:00:00</div>
+          </div>
+          <div id="session-note-wrap" class="hidden">
+            <textarea id="session-note" placeholder="What are you working on? (required to clock out or switch projects)" rows="2"></textarea>
           </div>
           <button id="clock-btn" class="btn-primary btn-clock">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -1528,6 +1604,19 @@ ul { list-style: none; }
     </main>
   </div>
 
+  <!-- Switch Project Modal -->
+  <div id="switch-modal-overlay" class="hidden">
+    <div id="switch-modal">
+      <h2>Switch Project?</h2>
+      <p>You're clocked in to <strong id="switch-from-name"></strong>. What would you like to do?</p>
+      <div class="modal-actions">
+        <button id="switch-cancel-btn" class="btn-secondary">Cancel</button>
+        <button id="switch-clockout-btn" class="btn-secondary">Clock Out</button>
+        <button id="switch-confirm-btn" class="btn-primary">Switch to <span id="switch-to-name"></span></button>
+      </div>
+    </div>
+  </div>
+
   <!-- Edit Entry Modal -->
   <div id="modal-overlay" class="hidden">
     <div id="modal">
@@ -1612,6 +1701,7 @@ let editingId        = null;
 let currentUser      = null;
 let unsubscribers    = [];
 let authMode         = 'signin';
+let pendingSwitchProjectId = null;
 
 // =====================
 // Firestore Refs
@@ -1834,19 +1924,35 @@ async function clockIn() {
   await setDoc(sessionRef(), { clockIn: Date.now(), projectId: currentProjectId });
 }
 
-async function clockOut() {
+function getSessionNote() {
+  return (document.getElementById('session-note')?.value || '').trim();
+}
+
+function highlightNoteField() {
+  const f = document.getElementById('session-note');
+  if (!f) return;
+  f.focus();
+  f.classList.add('field-error');
+  setTimeout(() => f.classList.remove('field-error'), 2000);
+}
+
+async function clockOut(noteOverride) {
   if (!activeSession) return;
+  const note = noteOverride !== undefined ? noteOverride : getSessionNote();
+  if (!note) { highlightNoteField(); return; }
   const entry = {
     id: generateId(),
     clockIn: activeSession.clockIn,
     clockOut: Date.now(),
     projectId: activeSession.projectId || 'default',
-    note: ''
+    note
   };
   const batch = writeBatch(db);
   batch.set(entryRef(entry.id), entry);
   batch.delete(sessionRef());
   await batch.commit();
+  const f = document.getElementById('session-note');
+  if (f) f.value = '';
 }
 
 // =====================
@@ -1980,10 +2086,71 @@ function renderPickerList(query) {
 }
 
 function selectProject(id) {
+  closeProjectPicker();
+  if (activeSession && (activeSession.projectId || 'default') !== id) {
+    const note = getSessionNote();
+    if (!note) { highlightNoteField(); return; }
+    pendingSwitchProjectId = id;
+    showSwitchDialog(id);
+    return;
+  }
   currentProjectId = id;
   localStorage.setItem('tclock_currentProject', id);
-  closeProjectPicker();
   renderTimeCard();
+}
+
+function showSwitchDialog(newProjectId) {
+  const from = getProjectById(activeSession?.projectId || 'default');
+  const to   = getProjectById(newProjectId);
+  document.getElementById('switch-from-name').textContent = from.name;
+  document.getElementById('switch-to-name').textContent   = to.name;
+  document.getElementById('switch-modal-overlay').classList.remove('hidden');
+}
+
+function closeSwitchDialog() {
+  document.getElementById('switch-modal-overlay').classList.add('hidden');
+  pendingSwitchProjectId = null;
+}
+
+async function confirmSwitchProject() {
+  const note = getSessionNote();
+  const entry = {
+    id: generateId(),
+    clockIn: activeSession.clockIn,
+    clockOut: Date.now(),
+    projectId: activeSession.projectId || 'default',
+    note
+  };
+  const newSession = { clockIn: Date.now(), projectId: pendingSwitchProjectId };
+  const batch = writeBatch(db);
+  batch.set(entryRef(entry.id), entry);
+  batch.set(sessionRef(), newSession);
+  await batch.commit();
+  currentProjectId = pendingSwitchProjectId;
+  localStorage.setItem('tclock_currentProject', pendingSwitchProjectId);
+  closeSwitchDialog();
+  const f = document.getElementById('session-note');
+  if (f) f.value = '';
+}
+
+async function switchDialogClockOut() {
+  const note = getSessionNote();
+  const entry = {
+    id: generateId(),
+    clockIn: activeSession.clockIn,
+    clockOut: Date.now(),
+    projectId: activeSession.projectId || 'default',
+    note
+  };
+  const batch = writeBatch(db);
+  batch.set(entryRef(entry.id), entry);
+  batch.delete(sessionRef());
+  await batch.commit();
+  currentProjectId = pendingSwitchProjectId;
+  localStorage.setItem('tclock_currentProject', pendingSwitchProjectId);
+  closeSwitchDialog();
+  const f = document.getElementById('session-note');
+  if (f) f.value = '';
 }
 
 function showNewProjectForm() {
@@ -2035,6 +2202,10 @@ function renderTimeCard() {
     elapsedDiv.classList.add('hidden');
     panel.classList.remove('clocked-in');
   }
+
+  // Show/hide session note field
+  const noteWrap = document.getElementById('session-note-wrap');
+  if (noteWrap) noteWrap.classList.toggle('hidden', !activeSession);
 
   // Update project selector button
   const proj = getProjectById(currentProjectId);
@@ -2368,11 +2539,16 @@ function getDaySummaryRows(dateStr) {
   const projMap = {};
   dayEntries.forEach(e => {
     const pid = e.projectId || 'default';
-    projMap[pid] = (projMap[pid] || 0) + (e.clockOut - e.clockIn);
+    if (!projMap[pid]) projMap[pid] = { ms: 0, notes: [] };
+    projMap[pid].ms += (e.clockOut - e.clockIn);
+    if (e.note) projMap[pid].notes.push(e.note);
   });
 
   return Object.entries(projMap)
-    .map(([pid, ms]) => ({ proj: getProjectById(pid), ms, rounded: roundToQuarterMs(ms) }))
+    .map(([pid, { ms, notes }]) => ({
+      proj: getProjectById(pid), ms, rounded: roundToQuarterMs(ms),
+      notes: [...new Set(notes)]
+    }))
     .sort((a, b) => b.ms - a.ms);
 }
 
@@ -2406,7 +2582,7 @@ function renderDailySummary() {
   table.appendChild(head);
 
   let totalMs = 0, totalRounded = 0;
-  rows.forEach(({ proj, ms, rounded }) => {
+  rows.forEach(({ proj, ms, rounded, notes }) => {
     totalMs      += ms;
     totalRounded += rounded;
     const row = document.createElement('div');
@@ -2419,6 +2595,12 @@ function renderDailySummary() {
       <span class="ds-actual">${formatDuration(ms)}</span>
       <span class="ds-payroll">${formatDecimalHours(rounded)}</span>`;
     table.appendChild(row);
+    if (notes.length) {
+      const noteRow = document.createElement('div');
+      noteRow.className = 'ds-notes-row';
+      noteRow.textContent = notes.join(' · ');
+      table.appendChild(noteRow);
+    }
   });
 
   const total = document.createElement('div');
@@ -2623,6 +2805,14 @@ function init() {
   document.getElementById('auth-submit').addEventListener('click', handleAuthSubmit);
   document.getElementById('auth-email').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('auth-password').focus(); });
   document.getElementById('auth-password').addEventListener('keydown', e => { if (e.key === 'Enter') handleAuthSubmit(); });
+
+  // Switch project modal
+  document.getElementById('switch-cancel-btn').addEventListener('click', closeSwitchDialog);
+  document.getElementById('switch-clockout-btn').addEventListener('click', switchDialogClockOut);
+  document.getElementById('switch-confirm-btn').addEventListener('click', confirmSwitchProject);
+  document.getElementById('switch-modal-overlay').addEventListener('click', e => {
+    if (e.target.id === 'switch-modal-overlay') closeSwitchDialog();
+  });
 
   // Sign out
   document.getElementById('signout-btn').addEventListener('click', async () => {
