@@ -2847,15 +2847,13 @@ function copyDailySummary() {
   });
 
   let totalRounded = 0;
-  let text = `Daily Summary — ${dateLabel}
-`;
+  let text = `Daily Summary — ${dateLabel}\n`;
   rows.forEach(({ proj, task, rounded, notes }) => {
     totalRounded += rounded;
     const projLabel = proj.number || proj.name;
     const taskLabel = task ? task.code : '';
     const notePart  = notes.length ? ` — ${notes.join('; ')}` : '';
-    text += `${projLabel}${taskLabel ? ' ' + taskLabel : ''}: ${formatDecimalHours(rounded)}${notePart}
-`;
+    text += `${projLabel}${taskLabel ? ' ' + taskLabel : ''}: ${formatDecimalHours(rounded)}${notePart}\n`;
   });
   text += `Total: ${formatDecimalHours(totalRounded)}`;
 
@@ -2891,9 +2889,7 @@ function restoreData(file) {
         alert('Invalid backup file — please choose a Tclock backup (.json).');
         return;
       }
-      if (!confirm(`This will replace all current data with the backup from ${new Date(data.exportedAt).toLocaleDateString()}.
-
-Continue?`)) return;
+      if (!confirm(`This will replace all current data with the backup from ${new Date(data.exportedAt).toLocaleDateString()}.\n\nContinue?`)) return;
       const batch = writeBatch(db);
       entries.forEach(en => batch.delete(entryRef(en.id)));
       projects.filter(p => p.id !== 'default').forEach(p => batch.delete(projectRef(p.id)));
@@ -2930,8 +2926,7 @@ function exportCSV() {
       ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
     });
 
-  const csv = ['Date,Project,Clock In,Clock Out,Duration (min),Note', ...rows].join('
-');
+  const csv = ['Date,Project,Clock In,Clock Out,Duration (min),Note', ...rows].join('\n');
   const a   = Object.assign(document.createElement('a'), {
     href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })),
     download: `tclock-${formatDateInput(Date.now())}.csv`
