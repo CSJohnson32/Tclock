@@ -1235,3 +1235,76 @@ ul { list-style: none; }
   font-weight: 600;
   margin-top: 4px;
 }
+
+/* =============================
+   Session Note Field
+   ============================= */
+#session-note-wrap {
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto 12px;
+}
+
+#session-note {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  resize: vertical;
+  min-height: 60px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+#session-note:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+}
+
+#session-note.field-error {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(239,68,68,.2);
+}
+
+/* =============================
+   Switch Project Modal
+   ============================= */
+#switch-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(3px);
+}
+
+#switch-modal {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 28px;
+  width: 400px;
+  max-width: 90vw;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
+}
+
+#switch-modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+#switch-modal p  { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5; }
+#switch-modal p strong { color: var(--text); }
+
+/* =============================
+   Daily Summary Notes Row
+   ============================= */
+.ds-notes-row {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 2px 0 8px 22px;
+  line-height: 1.5;
+  grid-column: 1 / -1;
+}

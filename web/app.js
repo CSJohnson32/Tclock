@@ -48,6 +48,7 @@ let editingId        = null;
 let currentUser      = null;
 let unsubscribers    = [];
 let authMode         = 'signin';
+let pendingSwitchProjectId = null;
 
 // =====================
 // Firestore Refs
@@ -270,19 +271,35 @@ async function clockIn() {
   await setDoc(sessionRef(), { clockIn: Date.now(), projectId: currentProjectId });
 }
 
-async function clockOut() {
+function getSessionNote() {
+  return (document.getElementById('session-note')?.value || '').trim();
+}
+
+function highlightNoteField() {
+  const f = document.getElementById('session-note');
+  if (!f) return;
+  f.focus();
+  f.classList.add('field-error');
+  setTimeout(() => f.classList.remove('field-error'), 2000);
+}
+
+async function clockOut(noteOverride) {
   if (!activeSession) return;
+  const note = noteOverride !== undefined ? noteOverride : getSessionNote();
+  if (!note) { highlightNoteField(); return; }
   const entry = {
     id: generateId(),
     clockIn: activeSession.clockIn,
     clockOut: Date.now(),
     projectId: activeSession.projectId || 'default',
-    note: ''
+    note
   };
   const batch = writeBatch(db);
   batch.set(entryRef(entry.id), entry);
   batch.delete(sessionRef());
   await batch.commit();
+  const f = document.getElementById('session-note');
+  if (f) f.value = '';
 }
 
 // =====================
@@ -416,10 +433,71 @@ function renderPickerList(query) {
 }
 
 function selectProject(id) {
+  closeProjectPicker();
+  if (activeSession && (activeSession.projectId || 'default') !== id) {
+    const note = getSessionNote();
+    if (!note) { highlightNoteField(); return; }
+    pendingSwitchProjectId = id;
+    showSwitchDialog(id);
+    return;
+  }
   currentProjectId = id;
   localStorage.setItem('tclock_currentProject', id);
-  closeProjectPicker();
   renderTimeCard();
+}
+
+function showSwitchDialog(newProjectId) {
+  const from = getProjectById(activeSession?.projectId || 'default');
+  const to   = getProjectById(newProjectId);
+  document.getElementById('switch-from-name').textContent = from.name;
+  document.getElementById('switch-to-name').textContent   = to.name;
+  document.getElementById('switch-modal-overlay').classList.remove('hidden');
+}
+
+function closeSwitchDialog() {
+  document.getElementById('switch-modal-overlay').classList.add('hidden');
+  pendingSwitchProjectId = null;
+}
+
+async function confirmSwitchProject() {
+  const note = getSessionNote();
+  const entry = {
+    id: generateId(),
+    clockIn: activeSession.clockIn,
+    clockOut: Date.now(),
+    projectId: activeSession.projectId || 'default',
+    note
+  };
+  const newSession = { clockIn: Date.now(), projectId: pendingSwitchProjectId };
+  const batch = writeBatch(db);
+  batch.set(entryRef(entry.id), entry);
+  batch.set(sessionRef(), newSession);
+  await batch.commit();
+  currentProjectId = pendingSwitchProjectId;
+  localStorage.setItem('tclock_currentProject', pendingSwitchProjectId);
+  closeSwitchDialog();
+  const f = document.getElementById('session-note');
+  if (f) f.value = '';
+}
+
+async function switchDialogClockOut() {
+  const note = getSessionNote();
+  const entry = {
+    id: generateId(),
+    clockIn: activeSession.clockIn,
+    clockOut: Date.now(),
+    projectId: activeSession.projectId || 'default',
+    note
+  };
+  const batch = writeBatch(db);
+  batch.set(entryRef(entry.id), entry);
+  batch.delete(sessionRef());
+  await batch.commit();
+  currentProjectId = pendingSwitchProjectId;
+  localStorage.setItem('tclock_currentProject', pendingSwitchProjectId);
+  closeSwitchDialog();
+  const f = document.getElementById('session-note');
+  if (f) f.value = '';
 }
 
 function showNewProjectForm() {
@@ -471,6 +549,10 @@ function renderTimeCard() {
     elapsedDiv.classList.add('hidden');
     panel.classList.remove('clocked-in');
   }
+
+  // Show/hide session note field
+  const noteWrap = document.getElementById('session-note-wrap');
+  if (noteWrap) noteWrap.classList.toggle('hidden', !activeSession);
 
   // Update project selector button
   const proj = getProjectById(currentProjectId);
@@ -804,11 +886,16 @@ function getDaySummaryRows(dateStr) {
   const projMap = {};
   dayEntries.forEach(e => {
     const pid = e.projectId || 'default';
-    projMap[pid] = (projMap[pid] || 0) + (e.clockOut - e.clockIn);
+    if (!projMap[pid]) projMap[pid] = { ms: 0, notes: [] };
+    projMap[pid].ms += (e.clockOut - e.clockIn);
+    if (e.note) projMap[pid].notes.push(e.note);
   });
 
   return Object.entries(projMap)
-    .map(([pid, ms]) => ({ proj: getProjectById(pid), ms, rounded: roundToQuarterMs(ms) }))
+    .map(([pid, { ms, notes }]) => ({
+      proj: getProjectById(pid), ms, rounded: roundToQuarterMs(ms),
+      notes: [...new Set(notes)]
+    }))
     .sort((a, b) => b.ms - a.ms);
 }
 
@@ -842,7 +929,7 @@ function renderDailySummary() {
   table.appendChild(head);
 
   let totalMs = 0, totalRounded = 0;
-  rows.forEach(({ proj, ms, rounded }) => {
+  rows.forEach(({ proj, ms, rounded, notes }) => {
     totalMs      += ms;
     totalRounded += rounded;
     const row = document.createElement('div');
@@ -855,6 +942,12 @@ function renderDailySummary() {
       <span class="ds-actual">${formatDuration(ms)}</span>
       <span class="ds-payroll">${formatDecimalHours(rounded)}</span>`;
     table.appendChild(row);
+    if (notes.length) {
+      const noteRow = document.createElement('div');
+      noteRow.className = 'ds-notes-row';
+      noteRow.textContent = notes.join(' · ');
+      table.appendChild(noteRow);
+    }
   });
 
   const total = document.createElement('div');
@@ -1059,6 +1152,14 @@ function init() {
   document.getElementById('auth-submit').addEventListener('click', handleAuthSubmit);
   document.getElementById('auth-email').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('auth-password').focus(); });
   document.getElementById('auth-password').addEventListener('keydown', e => { if (e.key === 'Enter') handleAuthSubmit(); });
+
+  // Switch project modal
+  document.getElementById('switch-cancel-btn').addEventListener('click', closeSwitchDialog);
+  document.getElementById('switch-clockout-btn').addEventListener('click', switchDialogClockOut);
+  document.getElementById('switch-confirm-btn').addEventListener('click', confirmSwitchProject);
+  document.getElementById('switch-modal-overlay').addEventListener('click', e => {
+    if (e.target.id === 'switch-modal-overlay') closeSwitchDialog();
+  });
 
   // Sign out
   document.getElementById('signout-btn').addEventListener('click', async () => {
