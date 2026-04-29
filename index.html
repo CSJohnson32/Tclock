@@ -1417,32 +1417,27 @@ ul { list-style: none; }
 }
 
 /* =============================
-   Switch Project Modal
+   Clock Button Row
    ============================= */
-#switch-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.5);
+#clock-btn-row {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  backdrop-filter: blur(3px);
+  gap: 10px;
+  align-items: stretch;
 }
 
-#switch-modal {
-  background: var(--surface);
-  border-radius: var(--radius);
-  padding: 28px;
-  width: 400px;
-  max-width: 90vw;
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--border);
+#clock-btn-row #clock-btn {
+  flex: 1;
 }
 
-#switch-modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
-#switch-modal p  { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5; }
-#switch-modal p strong { color: var(--text); }
+#clock-btn-row .btn-switch {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.btn-switch:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 
 /* =============================
    Daily Summary Notes Row
@@ -1602,10 +1597,15 @@ ul { list-style: none; }
           <div id="session-note-wrap" class="hidden">
             <textarea id="session-note" placeholder="What are you working on? (required to clock out or switch projects)" rows="2"></textarea>
           </div>
-          <button id="clock-btn" class="btn-primary btn-clock">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Clock In
-          </button>
+          <div id="clock-btn-row">
+            <button id="clock-btn" class="btn-primary btn-clock">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Clock In
+            </button>
+            <button id="switch-project-btn" class="btn-secondary btn-switch hidden" disabled>
+              Switch Project
+            </button>
+          </div>
 
           <!-- Time window segmented control -->
           <div class="seg-control" id="tc-window-control">
@@ -1805,19 +1805,6 @@ ul { list-style: none; }
     </main>
   </div>
 
-  <!-- Switch Project Modal -->
-  <div id="switch-modal-overlay" class="hidden">
-    <div id="switch-modal">
-      <h2>Switch Project?</h2>
-      <p>You're clocked in to <strong id="switch-from-name"></strong>. What would you like to do?</p>
-      <div class="modal-actions">
-        <button id="switch-cancel-btn" class="btn-secondary">Cancel</button>
-        <button id="switch-clockout-btn" class="btn-secondary">Clock Out</button>
-        <button id="switch-confirm-btn" class="btn-primary">Switch to <span id="switch-to-name"></span></button>
-      </div>
-    </div>
-  </div>
-
   <!-- Edit Entry Modal -->
   <div id="modal-overlay" class="hidden">
     <div id="modal">
@@ -1918,7 +1905,6 @@ let editingId        = null;
 let currentUser      = null;
 let unsubscribers    = [];
 let authMode         = 'signin';
-let pendingSwitchProjectId = null;
 
 // =====================
 // Firestore Refs
@@ -2336,13 +2322,6 @@ function renderPickerList(query) {
 
 function selectProject(id) {
   closeProjectPicker();
-  if (activeSession && (activeSession.projectId || 'default') !== id) {
-    const note = getSessionNote();
-    if (!note) { highlightNoteField(); return; }
-    pendingSwitchProjectId = id;
-    showSwitchDialog(id);
-    return;
-  }
   currentProjectId = id;
   currentTaskId    = '';
   localStorage.setItem('tclock_currentProject', id);
@@ -2351,21 +2330,10 @@ function selectProject(id) {
   renderTimeCard();
 }
 
-function showSwitchDialog(newProjectId) {
-  const from = getProjectById(activeSession?.projectId || 'default');
-  const to   = getProjectById(newProjectId);
-  document.getElementById('switch-from-name').textContent = from.name;
-  document.getElementById('switch-to-name').textContent   = to.name;
-  document.getElementById('switch-modal-overlay').classList.remove('hidden');
-}
-
-function closeSwitchDialog() {
-  document.getElementById('switch-modal-overlay').classList.add('hidden');
-  pendingSwitchProjectId = null;
-}
-
-async function confirmSwitchProject() {
+async function switchProject() {
+  if (!activeSession) return;
   const note = getSessionNote();
+  if (!note) { highlightNoteField(); return; }
   const entry = {
     id: generateId(),
     clockIn: activeSession.clockIn,
@@ -2374,41 +2342,11 @@ async function confirmSwitchProject() {
     taskId: activeSession.taskId || '',
     note
   };
-  const newSession = { clockIn: Date.now(), projectId: pendingSwitchProjectId, taskId: currentTaskId };
+  const newSession = { clockIn: Date.now(), projectId: currentProjectId, taskId: currentTaskId };
   const batch = writeBatch(db);
   batch.set(entryRef(entry.id), entry);
   batch.set(sessionRef(), newSession);
   await batch.commit();
-  currentProjectId = pendingSwitchProjectId;
-  currentTaskId    = '';
-  localStorage.setItem('tclock_currentProject', pendingSwitchProjectId);
-  localStorage.removeItem('tclock_currentTask');
-  rebuildTaskSelector();
-  closeSwitchDialog();
-  const f = document.getElementById('session-note');
-  if (f) f.value = '';
-}
-
-async function switchDialogClockOut() {
-  const note = getSessionNote();
-  const entry = {
-    id: generateId(),
-    clockIn: activeSession.clockIn,
-    clockOut: Date.now(),
-    projectId: activeSession.projectId || 'default',
-    taskId: activeSession.taskId || '',
-    note
-  };
-  const batch = writeBatch(db);
-  batch.set(entryRef(entry.id), entry);
-  batch.delete(sessionRef());
-  await batch.commit();
-  currentProjectId = pendingSwitchProjectId;
-  currentTaskId    = '';
-  localStorage.setItem('tclock_currentProject', pendingSwitchProjectId);
-  localStorage.removeItem('tclock_currentTask');
-  rebuildTaskSelector();
-  closeSwitchDialog();
   const f = document.getElementById('session-note');
   if (f) f.value = '';
 }
@@ -2442,6 +2380,7 @@ async function confirmNewProject() {
 // =====================
 function renderTimeCard() {
   const btn = document.getElementById('clock-btn');
+  const switchBtn = document.getElementById('switch-project-btn');
   const statusText = document.getElementById('clock-status-text');
   const elapsedDiv = document.getElementById('elapsed-display');
   const panel = document.getElementById('clock-panel');
@@ -2457,6 +2396,11 @@ function renderTimeCard() {
     statusText.textContent = `Clocked in · ${sessionProj.name}${taskPart} · since ${formatTime(activeSession.clockIn)}`;
     elapsedDiv.classList.remove('hidden');
     panel.classList.add('clocked-in');
+    if (switchBtn) {
+      switchBtn.classList.remove('hidden');
+      const sameProject = currentProjectId === (activeSession.projectId || 'default');
+      switchBtn.disabled = sameProject;
+    }
   } else {
     btn.classList.remove('clocked-in');
     btn.innerHTML = `
@@ -2465,6 +2409,7 @@ function renderTimeCard() {
     statusText.textContent = 'Not clocked in';
     elapsedDiv.classList.add('hidden');
     panel.classList.remove('clocked-in');
+    if (switchBtn) switchBtn.classList.add('hidden');
   }
 
   // Show/hide session note field
@@ -2902,13 +2847,15 @@ function copyDailySummary() {
   });
 
   let totalRounded = 0;
-  let text = `Daily Summary — ${dateLabel}\n`;
+  let text = `Daily Summary — ${dateLabel}
+`;
   rows.forEach(({ proj, task, rounded, notes }) => {
     totalRounded += rounded;
     const projLabel = proj.number || proj.name;
     const taskLabel = task ? task.code : '';
     const notePart  = notes.length ? ` — ${notes.join('; ')}` : '';
-    text += `${projLabel}${taskLabel ? ' ' + taskLabel : ''}: ${formatDecimalHours(rounded)}${notePart}\n`;
+    text += `${projLabel}${taskLabel ? ' ' + taskLabel : ''}: ${formatDecimalHours(rounded)}${notePart}
+`;
   });
   text += `Total: ${formatDecimalHours(totalRounded)}`;
 
@@ -2944,7 +2891,9 @@ function restoreData(file) {
         alert('Invalid backup file — please choose a Tclock backup (.json).');
         return;
       }
-      if (!confirm(`This will replace all current data with the backup from ${new Date(data.exportedAt).toLocaleDateString()}.\n\nContinue?`)) return;
+      if (!confirm(`This will replace all current data with the backup from ${new Date(data.exportedAt).toLocaleDateString()}.
+
+Continue?`)) return;
       const batch = writeBatch(db);
       entries.forEach(en => batch.delete(entryRef(en.id)));
       projects.filter(p => p.id !== 'default').forEach(p => batch.delete(projectRef(p.id)));
@@ -2981,7 +2930,8 @@ function exportCSV() {
       ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
     });
 
-  const csv = ['Date,Project,Clock In,Clock Out,Duration (min),Note', ...rows].join('\n');
+  const csv = ['Date,Project,Clock In,Clock Out,Duration (min),Note', ...rows].join('
+');
   const a   = Object.assign(document.createElement('a'), {
     href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })),
     download: `tclock-${formatDateInput(Date.now())}.csv`
@@ -3229,14 +3179,6 @@ function init() {
     renderTaskFormSection();
   });
 
-  // Switch project modal
-  document.getElementById('switch-cancel-btn').addEventListener('click', closeSwitchDialog);
-  document.getElementById('switch-clockout-btn').addEventListener('click', switchDialogClockOut);
-  document.getElementById('switch-confirm-btn').addEventListener('click', confirmSwitchProject);
-  document.getElementById('switch-modal-overlay').addEventListener('click', e => {
-    if (e.target.id === 'switch-modal-overlay') closeSwitchDialog();
-  });
-
   // Sign out
   document.getElementById('signout-btn').addEventListener('click', async () => {
     if (confirm('Sign out of Tclock?')) await signOut(auth);
@@ -3247,6 +3189,7 @@ function init() {
 
   // Clock button
   document.getElementById('clock-btn').addEventListener('click', () => activeSession ? clockOut() : clockIn());
+  document.getElementById('switch-project-btn').addEventListener('click', switchProject);
 
   // Time card window segmented control
   document.getElementById('tc-window-control').addEventListener('click', e => {
