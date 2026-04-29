@@ -60,7 +60,6 @@ let editingId        = null;
 let currentUser      = null;
 let unsubscribers    = [];
 let authMode         = 'signin';
-let pendingSwitchProjectId = null;
 
 // =====================
 // Firestore Refs
@@ -478,13 +477,6 @@ function renderPickerList(query) {
 
 function selectProject(id) {
   closeProjectPicker();
-  if (activeSession && (activeSession.projectId || 'default') !== id) {
-    const note = getSessionNote();
-    if (!note) { highlightNoteField(); return; }
-    pendingSwitchProjectId = id;
-    showSwitchDialog(id);
-    return;
-  }
   currentProjectId = id;
   currentTaskId    = '';
   localStorage.setItem('tclock_currentProject', id);
@@ -493,21 +485,10 @@ function selectProject(id) {
   renderTimeCard();
 }
 
-function showSwitchDialog(newProjectId) {
-  const from = getProjectById(activeSession?.projectId || 'default');
-  const to   = getProjectById(newProjectId);
-  document.getElementById('switch-from-name').textContent = from.name;
-  document.getElementById('switch-to-name').textContent   = to.name;
-  document.getElementById('switch-modal-overlay').classList.remove('hidden');
-}
-
-function closeSwitchDialog() {
-  document.getElementById('switch-modal-overlay').classList.add('hidden');
-  pendingSwitchProjectId = null;
-}
-
-async function confirmSwitchProject() {
+async function switchProject() {
+  if (!activeSession) return;
   const note = getSessionNote();
+  if (!note) { highlightNoteField(); return; }
   const entry = {
     id: generateId(),
     clockIn: activeSession.clockIn,
@@ -516,41 +497,11 @@ async function confirmSwitchProject() {
     taskId: activeSession.taskId || '',
     note
   };
-  const newSession = { clockIn: Date.now(), projectId: pendingSwitchProjectId, taskId: currentTaskId };
+  const newSession = { clockIn: Date.now(), projectId: currentProjectId, taskId: currentTaskId };
   const batch = writeBatch(db);
   batch.set(entryRef(entry.id), entry);
   batch.set(sessionRef(), newSession);
   await batch.commit();
-  currentProjectId = pendingSwitchProjectId;
-  currentTaskId    = '';
-  localStorage.setItem('tclock_currentProject', pendingSwitchProjectId);
-  localStorage.removeItem('tclock_currentTask');
-  rebuildTaskSelector();
-  closeSwitchDialog();
-  const f = document.getElementById('session-note');
-  if (f) f.value = '';
-}
-
-async function switchDialogClockOut() {
-  const note = getSessionNote();
-  const entry = {
-    id: generateId(),
-    clockIn: activeSession.clockIn,
-    clockOut: Date.now(),
-    projectId: activeSession.projectId || 'default',
-    taskId: activeSession.taskId || '',
-    note
-  };
-  const batch = writeBatch(db);
-  batch.set(entryRef(entry.id), entry);
-  batch.delete(sessionRef());
-  await batch.commit();
-  currentProjectId = pendingSwitchProjectId;
-  currentTaskId    = '';
-  localStorage.setItem('tclock_currentProject', pendingSwitchProjectId);
-  localStorage.removeItem('tclock_currentTask');
-  rebuildTaskSelector();
-  closeSwitchDialog();
   const f = document.getElementById('session-note');
   if (f) f.value = '';
 }
@@ -584,6 +535,7 @@ async function confirmNewProject() {
 // =====================
 function renderTimeCard() {
   const btn = document.getElementById('clock-btn');
+  const switchBtn = document.getElementById('switch-project-btn');
   const statusText = document.getElementById('clock-status-text');
   const elapsedDiv = document.getElementById('elapsed-display');
   const panel = document.getElementById('clock-panel');
@@ -599,6 +551,11 @@ function renderTimeCard() {
     statusText.textContent = `Clocked in · ${sessionProj.name}${taskPart} · since ${formatTime(activeSession.clockIn)}`;
     elapsedDiv.classList.remove('hidden');
     panel.classList.add('clocked-in');
+    if (switchBtn) {
+      switchBtn.classList.remove('hidden');
+      const sameProject = currentProjectId === (activeSession.projectId || 'default');
+      switchBtn.disabled = sameProject;
+    }
   } else {
     btn.classList.remove('clocked-in');
     btn.innerHTML = `
@@ -607,6 +564,7 @@ function renderTimeCard() {
     statusText.textContent = 'Not clocked in';
     elapsedDiv.classList.add('hidden');
     panel.classList.remove('clocked-in');
+    if (switchBtn) switchBtn.classList.add('hidden');
   }
 
   // Show/hide session note field
@@ -1371,14 +1329,6 @@ function init() {
     renderTaskFormSection();
   });
 
-  // Switch project modal
-  document.getElementById('switch-cancel-btn').addEventListener('click', closeSwitchDialog);
-  document.getElementById('switch-clockout-btn').addEventListener('click', switchDialogClockOut);
-  document.getElementById('switch-confirm-btn').addEventListener('click', confirmSwitchProject);
-  document.getElementById('switch-modal-overlay').addEventListener('click', e => {
-    if (e.target.id === 'switch-modal-overlay') closeSwitchDialog();
-  });
-
   // Sign out
   document.getElementById('signout-btn').addEventListener('click', async () => {
     if (confirm('Sign out of Tclock?')) await signOut(auth);
@@ -1389,6 +1339,7 @@ function init() {
 
   // Clock button
   document.getElementById('clock-btn').addEventListener('click', () => activeSession ? clockOut() : clockIn());
+  document.getElementById('switch-project-btn').addEventListener('click', switchProject);
 
   // Time card window segmented control
   document.getElementById('tc-window-control').addEventListener('click', e => {

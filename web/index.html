@@ -151,10 +151,15 @@
           <div id="session-note-wrap" class="hidden">
             <textarea id="session-note" placeholder="What are you working on? (required to clock out or switch projects)" rows="2"></textarea>
           </div>
-          <button id="clock-btn" class="btn-primary btn-clock">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Clock In
-          </button>
+          <div id="clock-btn-row">
+            <button id="clock-btn" class="btn-primary btn-clock">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Clock In
+            </button>
+            <button id="switch-project-btn" class="btn-secondary btn-switch hidden" disabled>
+              Switch Project
+            </button>
+          </div>
 
           <!-- Time window segmented control -->
           <div class="seg-control" id="tc-window-control">
@@ -352,19 +357,6 @@
       </section>
 
     </main>
-  </div>
-
-  <!-- Switch Project Modal -->
-  <div id="switch-modal-overlay" class="hidden">
-    <div id="switch-modal">
-      <h2>Switch Project?</h2>
-      <p>You're clocked in to <strong id="switch-from-name"></strong>. What would you like to do?</p>
-      <div class="modal-actions">
-        <button id="switch-cancel-btn" class="btn-secondary">Cancel</button>
-        <button id="switch-clockout-btn" class="btn-secondary">Clock Out</button>
-        <button id="switch-confirm-btn" class="btn-primary">Switch to <span id="switch-to-name"></span></button>
-      </div>
-    </div>
   </div>
 
   <!-- Edit Entry Modal -->

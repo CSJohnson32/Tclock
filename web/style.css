@@ -1409,32 +1409,27 @@ ul { list-style: none; }
 }
 
 /* =============================
-   Switch Project Modal
+   Clock Button Row
    ============================= */
-#switch-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.5);
+#clock-btn-row {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  backdrop-filter: blur(3px);
+  gap: 10px;
+  align-items: stretch;
 }
 
-#switch-modal {
-  background: var(--surface);
-  border-radius: var(--radius);
-  padding: 28px;
-  width: 400px;
-  max-width: 90vw;
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--border);
+#clock-btn-row #clock-btn {
+  flex: 1;
 }
 
-#switch-modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
-#switch-modal p  { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5; }
-#switch-modal p strong { color: var(--text); }
+#clock-btn-row .btn-switch {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.btn-switch:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 
 /* =============================
    Daily Summary Notes Row
