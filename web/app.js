@@ -830,6 +830,20 @@ function renderTimesheets() {
 // =====================
 // Edit Modal
 // =====================
+function populateEditTaskSelect(projectId, selectedTaskId) {
+  const tsel = document.getElementById('edit-task');
+  const proj = getProjectById(projectId);
+  const projTasks = proj.tasks || [];
+  tsel.innerHTML = '<option value="">— No Task —</option>';
+  projTasks.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.id;
+    opt.textContent = `${t.code} — ${t.name}`;
+    tsel.appendChild(opt);
+  });
+  tsel.value = projTasks.find(t => t.id === selectedTaskId) ? selectedTaskId : '';
+}
+
 function openEditModal(id) {
   const entry = entries.find(e => e.id === id);
   if (!entry) return;
@@ -846,16 +860,8 @@ function openEditModal(id) {
   });
   sel.value = entry.projectId || 'default';
 
-  // Populate task select
-  const tsel = document.getElementById('edit-task');
-  tsel.innerHTML = '<option value="">— No Task —</option>';
-  tasks.forEach(t => {
-    const opt = document.createElement('option');
-    opt.value = t.id;
-    opt.textContent = `${t.code} — ${t.name}`;
-    tsel.appendChild(opt);
-  });
-  tsel.value = entry.taskId || '';
+  // Populate task select based on chosen project
+  populateEditTaskSelect(sel.value, entry.taskId || '');
 
   document.getElementById('edit-date').value      = formatDateInput(entry.clockIn);
   document.getElementById('edit-clock-in').value  = formatTimeInput(entry.clockIn);
@@ -1390,6 +1396,7 @@ function init() {
   document.getElementById('modal-cancel').addEventListener('click', closeModal);
   document.getElementById('modal-save').addEventListener('click', saveModal);
   document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target.id === 'modal-overlay') closeModal(); });
+  document.getElementById('edit-project').addEventListener('change', e => populateEditTaskSelect(e.target.value, ''));
 
   // Backup / Restore / Export
   document.getElementById('backup-btn').addEventListener('click', backupData);
