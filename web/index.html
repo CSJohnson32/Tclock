@@ -274,6 +274,7 @@
 
         <div class="tab-header">
           <h1>All Entries</h1>
+          <button id="add-entry-btn" class="btn-primary btn-sm">+ Add Entry</button>
           <div id="timesheet-filters">
             <select id="ts-filter-period">
               <option value="week">This Week</option>
@@ -359,10 +360,10 @@
     </main>
   </div>
 
-  <!-- Edit Entry Modal -->
+  <!-- Edit / Add Entry Modal -->
   <div id="modal-overlay" class="hidden">
     <div id="modal">
-      <h2>Edit Entry</h2>
+      <h2 id="modal-title">Edit Entry</h2>
       <div class="form-group">
         <label>Project</label>
         <select id="edit-project"></select>
@@ -372,17 +373,17 @@
         <select id="edit-task"><option value="">— No Task —</option></select>
       </div>
       <div class="form-group">
-        <label>Date</label>
-        <input type="date" id="edit-date" />
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Clock In</label>
-          <input type="time" id="edit-clock-in" />
+        <label>Clock In</label>
+        <div class="datetime-row">
+          <input type="date" id="edit-in-date" />
+          <input type="time" id="edit-in-time" />
         </div>
-        <div class="form-group">
-          <label>Clock Out</label>
-          <input type="time" id="edit-clock-out" />
+      </div>
+      <div class="form-group">
+        <label>Clock Out</label>
+        <div class="datetime-row">
+          <input type="date" id="edit-out-date" />
+          <input type="time" id="edit-out-time" />
         </div>
       </div>
       <div class="form-group">

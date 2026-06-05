@@ -863,10 +863,36 @@ function openEditModal(id) {
   // Populate task select based on chosen project
   populateEditTaskSelect(sel.value, entry.taskId || '');
 
-  document.getElementById('edit-date').value      = formatDateInput(entry.clockIn);
-  document.getElementById('edit-clock-in').value  = formatTimeInput(entry.clockIn);
-  document.getElementById('edit-clock-out').value = entry.clockOut ? formatTimeInput(entry.clockOut) : '';
-  document.getElementById('edit-note').value      = entry.note || '';
+  document.getElementById('edit-in-date').value  = formatDateInput(entry.clockIn);
+  document.getElementById('edit-in-time').value  = formatTimeInput(entry.clockIn);
+  document.getElementById('edit-out-date').value = entry.clockOut ? formatDateInput(entry.clockOut) : formatDateInput(entry.clockIn);
+  document.getElementById('edit-out-time').value = entry.clockOut ? formatTimeInput(entry.clockOut) : '';
+  document.getElementById('edit-note').value     = entry.note || '';
+  document.getElementById('modal-title').textContent = 'Edit Entry';
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function openNewEntryModal() {
+  // Populate project dropdown
+  const sel = document.getElementById('edit-project');
+  sel.innerHTML = '';
+  projects.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = getProjectLabel(p);
+    sel.appendChild(opt);
+  });
+  sel.value = currentProjectId;
+  populateEditTaskSelect(currentProjectId, currentTaskId);
+
+  const now = Date.now();
+  document.getElementById('edit-in-date').value  = formatDateInput(now);
+  document.getElementById('edit-in-time').value  = '';
+  document.getElementById('edit-out-date').value = formatDateInput(now);
+  document.getElementById('edit-out-time').value = '';
+  document.getElementById('edit-note').value     = '';
+  editingId = null;
+  document.getElementById('modal-title').textContent = 'Add Entry';
   document.getElementById('modal-overlay').classList.remove('hidden');
 }
 
@@ -876,22 +902,28 @@ function closeModal() {
 }
 
 async function saveModal() {
-  if (!editingId) return;
-  const entry = entries.find(e => e.id === editingId);
-  if (!entry) return;
-  const dateStr = document.getElementById('edit-date').value;
-  const inStr   = document.getElementById('edit-clock-in').value;
-  const outStr  = document.getElementById('edit-clock-out').value;
-  if (!dateStr || !inStr) return;
-  const updated = {
-    ...entry,
-    projectId: document.getElementById('edit-project').value,
-    taskId:    document.getElementById('edit-task').value,
-    clockIn:   new Date(`${dateStr}T${inStr}:00`).getTime(),
-    clockOut:  outStr ? new Date(`${dateStr}T${outStr}:00`).getTime() : null,
-    note:      document.getElementById('edit-note').value.trim()
-  };
-  await setDoc(entryRef(editingId), updated);
+  const inDateStr  = document.getElementById('edit-in-date').value;
+  const inTimeStr  = document.getElementById('edit-in-time').value;
+  const outDateStr = document.getElementById('edit-out-date').value;
+  const outTimeStr = document.getElementById('edit-out-time').value;
+  if (!inDateStr || !inTimeStr) return;
+
+  const clockIn  = new Date(`${inDateStr}T${inTimeStr}:00`).getTime();
+  const clockOut = (outDateStr && outTimeStr) ? new Date(`${outDateStr}T${outTimeStr}:00`).getTime() : null;
+
+  const projectId = document.getElementById('edit-project').value;
+  const taskId    = document.getElementById('edit-task').value;
+  const note      = document.getElementById('edit-note').value.trim();
+
+  if (editingId) {
+    const entry = entries.find(e => e.id === editingId);
+    if (!entry) return;
+    const updated = { ...entry, projectId, taskId, clockIn, clockOut, note };
+    await setDoc(entryRef(editingId), updated);
+  } else {
+    const newEntry = { id: generateId(), projectId, taskId, clockIn, clockOut, note };
+    await setDoc(entryRef(newEntry.id), newEntry);
+  }
   closeModal();
 }
 
@@ -1393,6 +1425,7 @@ function init() {
   document.getElementById('ts-filter-project').addEventListener('change', renderTimesheets);
 
   // Modal
+  document.getElementById('add-entry-btn').addEventListener('click', openNewEntryModal);
   document.getElementById('modal-cancel').addEventListener('click', closeModal);
   document.getElementById('modal-save').addEventListener('click', saveModal);
   document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target.id === 'modal-overlay') closeModal(); });

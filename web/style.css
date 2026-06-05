@@ -1092,6 +1092,12 @@ ul { list-style: none; }
 
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
+.datetime-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
