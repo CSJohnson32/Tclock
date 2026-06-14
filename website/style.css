@@ -68,8 +68,7 @@ ul { list-style: none; }
   color: var(--navy);
   font-size: .75rem;
   font-weight: 700;
-  letter-spacing: .08em;
-  text-transform: uppercase;
+  letter-spacing: .06em;
   padding: 4px 14px;
   border-radius: 100px;
   margin-bottom: 16px;
@@ -151,7 +150,7 @@ ul { list-style: none; }
 }
 
 .nav__logo {
-  font-size: 1.45rem;
+  font-size: 1.81rem;
   font-weight: 800;
   letter-spacing: -.5px;
   flex-shrink: 0;
@@ -311,6 +310,10 @@ ul { list-style: none; }
   letter-spacing: .05em;
 }
 
+.stat__num--sm {
+  font-size: 1.3rem;
+}
+
 .stat__divider {
   width: 1px;
   height: 48px;
@@ -320,7 +323,7 @@ ul { list-style: none; }
 /* ─── Steps ────────────────────────────────────────────────────────────── */
 .steps {
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 16px;
   justify-content: center;
 }
@@ -365,7 +368,9 @@ ul { list-style: none; }
 
 .step__connector {
   flex-shrink: 0;
-  margin-top: 56px;
+  align-self: center;
+  display: flex;
+  align-items: center;
 }
 
 .step__connector svg {
@@ -581,7 +586,7 @@ ul { list-style: none; }
 
 .about__content {
   max-width: 720px;
-  margin-bottom: 56px;
+  margin-bottom: 0;
 }
 
 .about__lead {

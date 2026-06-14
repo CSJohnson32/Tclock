@@ -75,38 +75,46 @@
   const error   = document.getElementById('formError');
 
   if (form) {
-    form.addEventListener('submit', function (e) {
+    form.addEventListener('submit', async function (e) {
       e.preventDefault();
       success.hidden = true;
       error.hidden   = true;
 
       const name    = form.name.value.trim();
       const email   = form.email.value.trim();
-      const role    = form.role.value;
+      const service = form.service.value;
       const message = form.message.value.trim();
 
-      if (!name || !email || !role || !message) {
+      if (!name || !email || !service || !message) {
         error.hidden = false;
+        error.textContent = 'Please fill in all required fields.';
         return;
       }
 
-      // Encode as mailto body as a graceful fallback
-      const subject = encodeURIComponent('Enginuity Network Inquiry');
-      const body    = encodeURIComponent(
-        'Name: '        + name                            + '\n' +
-        'Email: '       + email                           + '\n' +
-        'Role: '        + role                            + '\n' +
-        'Discipline: '  + (form.discipline.value || 'N/A') + '\n\n' +
-        'Message:\n'    + message
-      );
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending…';
 
-      window.location.href = 'mailto:info@eng-pros.com?subject=' + subject + '&body=' + body;
+      try {
+        const response = await fetch('https://formspree.io/f/YOUR_FORM_ID', {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { 'Accept': 'application/json' }
+        });
 
-      // Show success after a short delay (user will see the mail app open)
-      setTimeout(function () {
-        success.hidden = false;
-        form.reset();
-      }, 600);
+        if (response.ok) {
+          success.hidden = false;
+          form.reset();
+        } else {
+          throw new Error('Server error');
+        }
+      } catch (err) {
+        error.hidden = false;
+        error.textContent = 'Something went wrong. Please email us directly at info@eng-pros.com.';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send Message';
+      }
     });
   }
 
