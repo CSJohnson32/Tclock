@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>For Engineers | Enginuity LLC</title>
+  <meta name="description" content="Licensed Professional Engineers — learn how Enginuity gives you flexible, fairly-compensated project work without the overhead of running your own firm." />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .eng-hero__inner {
+      max-width: 740px;
+      margin: 0 auto;
+      text-align: center;
+      padding: calc(var(--nav-h) + 80px) 24px 80px;
+    }
+
+    .eng-hero__inner h1 { margin-bottom: 24px; }
+
+    .eng-hero__inner p {
+      font-size: 1.1rem;
+      color: rgba(255,255,255,.75);
+      line-height: 1.8;
+    }
+
+    .eng-hero__inner p + p { margin-top: 14px; }
+
+    .eng-highlight {
+      color: var(--gold);
+      font-weight: 700;
+    }
+
+    .eng-content {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .eng-content h2 {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 18px;
+      line-height: 1.25;
+    }
+
+    .eng-content p {
+      font-size: 1rem;
+      color: var(--text-muted);
+      line-height: 1.8;
+    }
+
+    .eng-content p + p { margin-top: 14px; }
+
+    .eng-cta {
+      background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%);
+      padding: 80px 0;
+      text-align: center;
+    }
+
+    .eng-cta p {
+      font-size: 1.2rem;
+      color: var(--white);
+      font-weight: 600;
+      margin-bottom: 28px;
+    }
+
+    @media (max-width: 768px) {
+      .eng-hero__inner { padding-top: calc(var(--nav-h) + 56px); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <header class="nav" id="nav">
+    <div class="container nav__inner">
+      <a href="index.html" class="nav__logo">
+        <span class="logo-e">Engi</span><span class="logo-p">nuity</span>
+      </a>
+      <button class="nav__toggle" id="navToggle" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav__menu" id="navMenu">
+        <a href="index.html#how-it-works">How It Works</a>
+        <a href="index.html#services">Services</a>
+        <a href="index.html#about">About</a>
+        <a href="index.html#contact" class="btn btn--nav">Get Started</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ── Hero ── -->
+  <section class="hero">
+    <div class="eng-hero__inner fade-in">
+      <div class="hero__tag">For Licensed Professional Engineers</div>
+      <h1>A Better Way<br />to Work</h1>
+      <p>The traditional engineering career path doesn't work for everyone. Heavy workloads, rigid schedules, and limited flexibility have left many talented engineers looking for something different.</p>
+      <p><span class="eng-highlight">Enginuity offers another option.</span></p>
+    </div>
+    <div class="hero__wave">
+      <svg viewBox="0 0 1440 72" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        <path d="M0,36 C480,72 960,0 1440,36 L1440,72 L0,72 Z" fill="#f4f5f7"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ── How It Works ── -->
+  <section class="section bg-light">
+    <div class="container">
+      <div class="eng-content fade-in">
+        <div class="section__tag">The Model</div>
+        <h2>How It Works</h2>
+        <p>Clients bring their engineering needs to Enginuity. Projects are posted to a network job board, where licensed Professional Engineers can choose the work that fits their skills, schedule, and interests. No one is assigned work — engineers select projects they want to take on.</p>
+        <p>Enginuity handles client relationships, contracts, and professional liability insurance, so engineers can focus on doing great work without the overhead of running their own firm.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Connected Network ── -->
+  <section class="section">
+    <div class="container">
+      <div class="eng-content fade-in">
+        <div class="section__tag">Community</div>
+        <h2>A Connected Network, Not Just a List of Contractors</h2>
+        <p>Beyond project access, Enginuity engineers are part of a professional community. Have a design question or want a second opinion? The network is there to collaborate, discuss, and learn together — something independent consultants often miss.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Fair Compensation ── -->
+  <section class="section bg-light">
+    <div class="container">
+      <div class="eng-content fade-in">
+        <div class="section__tag">Compensation</div>
+        <h2>Built on Fair Compensation</h2>
+        <p>Enginuity is structured so engineers are rewarded directly for the work they complete, with competitive compensation that reflects their contribution and expertise.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Who We're Looking For ── -->
+  <section class="section">
+    <div class="container">
+      <div class="eng-content fade-in">
+        <div class="section__tag">Requirements</div>
+        <h2>Who We're Looking For</h2>
+        <p>Enginuity is built on quality. To join the network, engineers must hold an active Professional Engineer license and be capable of stamping their own work. All applicants go through a vetting process to ensure clients receive reliable, professional results — and that engineers are joining a network they can be proud of.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Apply CTA ── -->
+  <section class="eng-cta">
+    <div class="container fade-in">
+      <p>Interested in joining the network?</p>
+      <a href="index.html#contact" class="btn btn--primary">Apply Here</a>
+    </div>
+  </section>
+
+  <!-- ── Footer ── -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <a href="index.html" class="nav__logo">
+          <span class="logo-e">Engi</span><span class="logo-p">nuity</span>
+        </a>
+        <p>Connecting licensed PEs with clients who need credentialed engineering services.</p>
+      </div>
+      <div class="footer__cols">
+        <div class="footer__col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="index.html#about">About</a></li>
+            <li><a href="index.html#services">Services</a></li>
+            <li><a href="index.html#how-it-works">How It Works</a></li>
+            <li><a href="index.html#contact">Contact</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Engineers</h4>
+          <ul>
+            <li><a href="engineers.html">Learn More</a></li>
+            <li><a href="index.html#contact">Apply Now</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Contact</h4>
+          <ul>
+            <li><a href="mailto:info@eng-pros.com">info@eng-pros.com</a></li>
+            <li><a href="https://eng-pros.com" target="_blank" rel="noopener">eng-pros.com</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <div class="container">
+        <p>&copy; 2024 Enginuity LLC. All rights reserved.</p>
+        <p>Professional Engineering Network | eng-pros.com</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
