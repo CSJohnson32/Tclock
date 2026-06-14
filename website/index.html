@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enginuity LLC | Professional Engineering Network</title>
+  <meta name="description" content="Enginuity LLC connects clients with licensed Professional Engineers for credentialed engineering services — stamps, reviews, design, and consultation." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <header class="nav" id="nav">
+    <div class="container nav__inner">
+      <a href="#home" class="nav__logo">
+        <span class="logo-e">Eng</span><span class="logo-p">Pros</span>
+      </a>
+      <button class="nav__toggle" id="navToggle" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav__menu" id="navMenu">
+        <a href="#how-it-works">How It Works</a>
+        <a href="#services">Services</a>
+        <a href="#for-engineers">For Engineers</a>
+        <a href="#about">About</a>
+        <a href="#contact" class="btn btn--nav">Get Started</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ── Hero ── -->
+  <section class="hero" id="home">
+    <div class="container hero__inner">
+      <div class="hero__text fade-in">
+        <div class="hero__tag">Professional Engineering Network</div>
+        <h1>Licensed Engineers,<br />On Demand.</h1>
+        <p class="hero__sub">Enginuity LLC connects clients with verified, licensed Professional Engineers for stamps, reviews, design, and consultation — nationwide.</p>
+        <div class="hero__ctas">
+          <a href="#contact" class="btn btn--primary">Find an Engineer</a>
+          <a href="#for-engineers" class="btn btn--ghost">Join as a PE</a>
+        </div>
+      </div>
+      <div class="hero__graphic fade-in delay-1">
+        <svg viewBox="0 0 440 380" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <!-- Grid lines -->
+          <line x1="0" y1="60" x2="440" y2="60" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1"/>
+          <line x1="0" y1="130" x2="440" y2="130" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1"/>
+          <line x1="0" y1="200" x2="440" y2="200" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1"/>
+          <line x1="0" y1="270" x2="440" y2="270" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1"/>
+          <line x1="70" y1="0" x2="70" y2="380" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1"/>
+          <line x1="160" y1="0" x2="160" y2="380" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1"/>
+          <line x1="250" y1="0" x2="250" y2="380" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1"/>
+          <line x1="340" y1="0" x2="340" y2="380" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1"/>
+
+          <!-- Network connection lines -->
+          <line x1="220" y1="190" x2="100" y2="100" stroke="#c9a94e" stroke-opacity="0.5" stroke-width="1.5" stroke-dasharray="6 4"/>
+          <line x1="220" y1="190" x2="340" y2="100" stroke="#c9a94e" stroke-opacity="0.5" stroke-width="1.5" stroke-dasharray="6 4"/>
+          <line x1="220" y1="190" x2="100" y2="290" stroke="#c9a94e" stroke-opacity="0.5" stroke-width="1.5" stroke-dasharray="6 4"/>
+          <line x1="220" y1="190" x2="340" y2="290" stroke="#c9a94e" stroke-opacity="0.5" stroke-width="1.5" stroke-dasharray="6 4"/>
+          <line x1="100" y1="100" x2="340" y2="100" stroke="#c9a94e" stroke-opacity="0.25" stroke-width="1" stroke-dasharray="4 6"/>
+          <line x1="100" y1="290" x2="340" y2="290" stroke="#c9a94e" stroke-opacity="0.25" stroke-width="1" stroke-dasharray="4 6"/>
+
+          <!-- Center node — PE badge -->
+          <circle cx="220" cy="190" r="52" fill="#c9a94e" fill-opacity="0.15" stroke="#c9a94e" stroke-width="2"/>
+          <circle cx="220" cy="190" r="38" fill="#1a2744"/>
+          <text x="220" y="183" text-anchor="middle" fill="#c9a94e" font-size="13" font-weight="700" letter-spacing="1" font-family="system-ui,sans-serif">LICENSED</text>
+          <text x="220" y="200" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="800" font-family="system-ui,sans-serif">PE</text>
+          <text x="220" y="214" text-anchor="middle" fill="#c9a94e" font-size="10" letter-spacing="0.5" font-family="system-ui,sans-serif">NETWORK</text>
+
+          <!-- Satellite nodes -->
+          <circle cx="100" cy="100" r="30" fill="#1f3260" stroke="#c9a94e" stroke-width="1.5"/>
+          <text x="100" y="96" text-anchor="middle" fill="#c9a94e" font-size="9" font-weight="600" font-family="system-ui,sans-serif">CIVIL</text>
+          <text x="100" y="108" text-anchor="middle" fill="#ffffff" font-size="9" font-family="system-ui,sans-serif">ENG</text>
+
+          <circle cx="340" cy="100" r="30" fill="#1f3260" stroke="#c9a94e" stroke-width="1.5"/>
+          <text x="340" y="96" text-anchor="middle" fill="#c9a94e" font-size="9" font-weight="600" font-family="system-ui,sans-serif">STRUCT</text>
+          <text x="340" y="108" text-anchor="middle" fill="#ffffff" font-size="9" font-family="system-ui,sans-serif">ENG</text>
+
+          <circle cx="100" cy="290" r="30" fill="#1f3260" stroke="#c9a94e" stroke-width="1.5"/>
+          <text x="100" y="286" text-anchor="middle" fill="#c9a94e" font-size="9" font-weight="600" font-family="system-ui,sans-serif">ELEC</text>
+          <text x="100" y="298" text-anchor="middle" fill="#ffffff" font-size="9" font-family="system-ui,sans-serif">ENG</text>
+
+          <circle cx="340" cy="290" r="30" fill="#1f3260" stroke="#c9a94e" stroke-width="1.5"/>
+          <text x="340" y="286" text-anchor="middle" fill="#c9a94e" font-size="9" font-weight="600" font-family="system-ui,sans-serif">MECH</text>
+          <text x="340" y="298" text-anchor="middle" fill="#ffffff" font-size="9" font-family="system-ui,sans-serif">ENG</text>
+
+          <!-- Accent dots -->
+          <circle cx="220" cy="60" r="4" fill="#c9a94e" fill-opacity="0.5"/>
+          <circle cx="220" cy="320" r="4" fill="#c9a94e" fill-opacity="0.5"/>
+          <circle cx="40" cy="190" r="4" fill="#c9a94e" fill-opacity="0.5"/>
+          <circle cx="400" cy="190" r="4" fill="#c9a94e" fill-opacity="0.5"/>
+        </svg>
+      </div>
+    </div>
+    <div class="hero__wave">
+      <svg viewBox="0 0 1440 72" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        <path d="M0,36 C480,72 960,0 1440,36 L1440,72 L0,72 Z" fill="#f5f7fa"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ── Stats bar ── -->
+  <section class="stats">
+    <div class="container stats__inner">
+      <div class="stat">
+        <span class="stat__num">500+</span>
+        <span class="stat__label">Licensed PEs</span>
+      </div>
+      <div class="stat__divider"></div>
+      <div class="stat">
+        <span class="stat__num">All 50</span>
+        <span class="stat__label">States Covered</span>
+      </div>
+      <div class="stat__divider"></div>
+      <div class="stat">
+        <span class="stat__num">20+</span>
+        <span class="stat__label">Disciplines</span>
+      </div>
+      <div class="stat__divider"></div>
+      <div class="stat">
+        <span class="stat__num">Fast</span>
+        <span class="stat__label">Turnaround</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── How It Works ── -->
+  <section class="section" id="how-it-works">
+    <div class="container">
+      <div class="section__header fade-in">
+        <div class="section__tag">Simple Process</div>
+        <h2>How It Works</h2>
+        <p>Getting credentialed engineering services has never been easier.</p>
+      </div>
+      <div class="steps fade-in">
+        <div class="step">
+          <div class="step__num">01</div>
+          <h3>Submit Your Request</h3>
+          <p>Describe your project — scope, location, engineering discipline, and timeline. No long forms, no runaround.</p>
+        </div>
+        <div class="step__connector">
+          <svg viewBox="0 0 40 12" xmlns="http://www.w3.org/2000/svg"><path d="M0,6 L32,6 M28,2 L36,6 L28,10" stroke="#c9a94e" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        </div>
+        <div class="step">
+          <div class="step__num">02</div>
+          <h3>Get Matched</h3>
+          <p>We connect you with a verified PE licensed in the right state for your specific discipline and project needs.</p>
+        </div>
+        <div class="step__connector">
+          <svg viewBox="0 0 40 12" xmlns="http://www.w3.org/2000/svg"><path d="M0,6 L32,6 M28,2 L36,6 L28,10" stroke="#c9a94e" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        </div>
+        <div class="step">
+          <div class="step__num">03</div>
+          <h3>Work Gets Done</h3>
+          <p>Your engineer delivers — review, stamp, design, or consultation — on time and fully credentialed.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Services ── -->
+  <section class="section bg-light" id="services">
+    <div class="container">
+      <div class="section__header fade-in">
+        <div class="section__tag">What We Cover</div>
+        <h2>Engineering Services</h2>
+        <p>Our network spans all major engineering disciplines, so you always find the right expert.</p>
+      </div>
+      <div class="services__grid fade-in">
+        <div class="service-card">
+          <div class="service-card__icon">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="14" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
+              <path d="M10 14V10a6 6 0 0112 0v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="16" cy="21" r="2" fill="currentColor"/>
+            </svg>
+          </div>
+          <h3>Plan Reviews &amp; Stamps</h3>
+          <p>PE review and wet or digital stamp for permit submittals, code compliance, and building departments.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-card__icon">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="4" y="4" width="24" height="24" rx="2" stroke="currentColor" stroke-width="2"/>
+              <line x1="4" y1="12" x2="28" y2="12" stroke="currentColor" stroke-width="2"/>
+              <line x1="12" y1="12" x2="12" y2="28" stroke="currentColor" stroke-width="2"/>
+              <path d="M17 18h6M17 22h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h3>Structural Engineering</h3>
+          <p>Structural analysis, load calculations, foundation design, and review for residential and commercial projects.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-card__icon">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="16" r="12" stroke="currentColor" stroke-width="2"/>
+              <path d="M16 8v4M16 20v4M8 16h4M20 16h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="16" cy="16" r="3" fill="currentColor"/>
+            </svg>
+          </div>
+          <h3>Electrical Engineering</h3>
+          <p>Electrical system design, single-line diagrams, load analysis, solar/battery design, and code review.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-card__icon">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 28 L16 8 L28 28" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="8" y1="20" x2="24" y2="20" stroke="currentColor" stroke-width="2"/>
+              <line x1="4" y1="28" x2="28" y2="28" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </div>
+          <h3>Civil Engineering</h3>
+          <p>Site development, grading plans, drainage, stormwater management, and municipal infrastructure review.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-card__icon">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="8" y="4" width="16" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
+              <path d="M12 14v4M20 14v4M8 22h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <rect x="10" y="22" width="12" height="6" rx="1" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </div>
+          <h3>Mechanical Engineering</h3>
+          <p>HVAC design, mechanical system review, plumbing engineering, and equipment specifications.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-card__icon">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
+              <path d="M8 28c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M4 16c0-1.105.895-2 2-2h2M28 16h-2a2 2 0 00-2 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h3>Expert Consultation</h3>
+          <p>Project-specific consulting, peer review, due diligence reports, and expert witness services.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── For Engineers ── -->
+  <section class="section for-pe" id="for-engineers">
+    <div class="container for-pe__inner">
+      <div class="for-pe__text fade-in">
+        <div class="section__tag section__tag--gold">For Licensed PEs</div>
+        <h2>Put Your License to Work</h2>
+        <p>Join the Enginuity network and earn additional income on your schedule. Take on projects that match your discipline, licensed states, and availability — fully remote.</p>
+        <ul class="benefits">
+          <li>
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 10l4 4 8-8" stroke="#c9a94e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Flexible, remote-friendly projects
+          </li>
+          <li>
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 10l4 4 8-8" stroke="#c9a94e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Work only in your licensed states
+          </li>
+          <li>
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 10l4 4 8-8" stroke="#c9a94e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Set your own rates and availability
+          </li>
+          <li>
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 10l4 4 8-8" stroke="#c9a94e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Built-in credential verification
+          </li>
+          <li>
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 10l4 4 8-8" stroke="#c9a94e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Fast payment processing
+          </li>
+        </ul>
+        <a href="#contact" class="btn btn--primary">Apply to Join the Network</a>
+      </div>
+      <div class="for-pe__card fade-in delay-1">
+        <div class="pe-card">
+          <div class="pe-card__header">
+            <div class="pe-badge">PE</div>
+            <div>
+              <div class="pe-card__title">Network Member</div>
+              <div class="pe-card__sub">Verified &amp; Credentialed</div>
+            </div>
+          </div>
+          <div class="pe-card__divider"></div>
+          <div class="pe-card__stats">
+            <div class="pe-stat">
+              <span class="pe-stat__val">$85–$200</span>
+              <span class="pe-stat__label">Avg. hourly range</span>
+            </div>
+            <div class="pe-stat">
+              <span class="pe-stat__val">100%</span>
+              <span class="pe-stat__label">Remote work</span>
+            </div>
+            <div class="pe-stat">
+              <span class="pe-stat__val">&lt;48hr</span>
+              <span class="pe-stat__label">Avg. payment</span>
+            </div>
+          </div>
+          <div class="pe-card__footer">
+            Disciplines covered: Civil · Structural · Mechanical · Electrical · Chemical · and more
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── About ── -->
+  <section class="section bg-light" id="about">
+    <div class="container about fade-in">
+      <div class="section__header">
+        <div class="section__tag">Our Story</div>
+        <h2>About Enginuity LLC</h2>
+      </div>
+      <div class="about__content">
+        <p class="about__lead">Enginuity LLC was built on a simple premise: credentialed engineering expertise shouldn't be hard to find or slow to access.</p>
+        <p>We created a professional network that bridges the gap between licensed Professional Engineers and the clients, contractors, and businesses who need their credentials and expertise. Whether you need a one-time stamp or an ongoing engineering partner, Enginuity makes it straightforward.</p>
+        <p>Our platform is built on trust, credential verification, and professional accountability — everything you'd expect from a network of licensed engineers operating under the standards of their state boards.</p>
+      </div>
+      <div class="about__values">
+        <div class="value">
+          <div class="value__icon">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 4l3.09 6.26L26 11.27l-5 4.87 1.18 6.88L16 19.77l-6.18 3.25L11 16.14 6 11.27l6.91-1.01L16 4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h4>Verified Credentials</h4>
+          <p>Every PE in our network is license-verified before connecting with clients.</p>
+        </div>
+        <div class="value">
+          <div class="value__icon">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="16" r="12" stroke="currentColor" stroke-width="2"/>
+              <path d="M16 10v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h4>Fast Turnaround</h4>
+          <p>We understand project timelines. Our matching process gets you connected quickly.</p>
+        </div>
+        <div class="value">
+          <div class="value__icon">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M28 16A12 12 0 114 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M22 10l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h4>Nationwide Coverage</h4>
+          <p>PEs licensed across all 50 states, covering every major engineering discipline.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Contact / CTA ── -->
+  <section class="section contact" id="contact">
+    <div class="container contact__inner">
+      <div class="contact__text fade-in">
+        <div class="section__tag section__tag--gold">Get Connected</div>
+        <h2>Ready to Get Started?</h2>
+        <p>Whether you're a client looking for a licensed engineer or a PE looking to grow your income, reach out and we'll connect you fast.</p>
+        <div class="contact__info">
+          <div class="contact__info-item">
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" fill="currentColor"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" fill="currentColor"/></svg>
+            <a href="mailto:info@eng-pros.com">info@eng-pros.com</a>
+          </div>
+          <div class="contact__info-item">
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4.083 9h1.946c.089-1.546.383-2.97.837-4.118A6.004 6.004 0 004.083 9zm.412 2H4.083a6.004 6.004 0 002.783 4.118C6.396 13.97 6.102 12.546 6.013 11H4.495zM10 16c-.098 0-.195-.003-.29-.007L9.706 16H10c.293 0 .584-.015.87-.047A7.999 7.999 0 0010 16zm1.904-.765a6.96 6.96 0 00.396-.235A6.007 6.007 0 0014.917 11H13.4a12.82 12.82 0 01-.612 3.06 7.01 7.01 0 01-.884.175zM13.4 9h1.517a6.004 6.004 0 00-2.783-4.118C12.617 6.03 12.91 7.454 13 9h.4zM11.586 4.187a7 7 0 00-3.172 0C7.957 5.012 7.64 6.468 7.548 8h4.904c-.092-1.532-.41-2.988-.866-3.813zM7.548 10c.092 1.532.41 2.988.866 3.813a7 7 0 003.172 0c.456-.825.774-2.281.866-3.813H7.548z" fill="currentColor" clip-rule="evenodd"/></svg>
+            <a href="https://eng-pros.com" target="_blank" rel="noopener">eng-pros.com</a>
+          </div>
+        </div>
+      </div>
+      <form class="contact__form fade-in delay-1" id="contactForm" novalidate>
+        <div class="form__row">
+          <div class="form__field">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" placeholder="Your full name" required />
+          </div>
+          <div class="form__field">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="you@example.com" required />
+          </div>
+        </div>
+        <div class="form__row">
+          <div class="form__field">
+            <label for="role">I am a...</label>
+            <select id="role" name="role" required>
+              <option value="">Select one</option>
+              <option value="client">Client / Business Owner</option>
+              <option value="contractor">General Contractor</option>
+              <option value="developer">Developer / Builder</option>
+              <option value="engineer">Licensed PE (joining network)</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form__field">
+            <label for="discipline">Discipline (optional)</label>
+            <input type="text" id="discipline" name="discipline" placeholder="e.g. Structural, Civil, Electrical" />
+          </div>
+        </div>
+        <div class="form__field">
+          <label for="message">Message</label>
+          <textarea id="message" name="message" rows="4" placeholder="Tell us about your project or interest..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn--primary btn--full">Send Message</button>
+        <p class="form__success" id="formSuccess" hidden>Thank you! We'll be in touch within one business day.</p>
+        <p class="form__error" id="formError" hidden>Please fill in all required fields.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ── Footer ── -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <a href="#home" class="nav__logo">
+          <span class="logo-e">Eng</span><span class="logo-p">Pros</span>
+        </a>
+        <p>Connecting licensed PEs with clients who need credentialed engineering services — nationwide.</p>
+      </div>
+      <div class="footer__cols">
+        <div class="footer__col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="#about">About</a></li>
+            <li><a href="#services">Services</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Engineers</h4>
+          <ul>
+            <li><a href="#for-engineers">Join the Network</a></li>
+            <li><a href="#contact">Apply Now</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Contact</h4>
+          <ul>
+            <li><a href="mailto:info@eng-pros.com">info@eng-pros.com</a></li>
+            <li><a href="https://eng-pros.com" target="_blank" rel="noopener">eng-pros.com</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <div class="container">
+        <p>&copy; 2024 Enginuity LLC. All rights reserved.</p>
+        <p>Professional Engineering Network | eng-pros.com</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
