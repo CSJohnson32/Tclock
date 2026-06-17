@@ -248,8 +248,27 @@ ul { list-style: none; }
 
 .hero__ctas {
   display: flex;
+  align-items: center;
   gap: 14px;
   flex-wrap: wrap;
+}
+
+.hero__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 18px;
+  color: rgba(255,255,255,.7);
+  font-size: .88rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: rgba(255,255,255,.3);
+  transition: color .15s, text-decoration-color .15s;
+}
+
+.hero__link:hover {
+  color: var(--gold);
+  text-decoration-color: var(--gold);
 }
 
 .hero__graphic {
@@ -318,6 +337,109 @@ ul { list-style: none; }
   width: 1px;
   height: 48px;
   background: var(--border);
+}
+
+/* ─── Project Types ────────────────────────────────────────────────────── */
+.project-types__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.project-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  padding: 28px 20px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+  transition: transform .2s, box-shadow .2s, border-color .2s;
+  color: var(--text);
+}
+
+.project-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--gold);
+}
+
+.project-card__icon {
+  width: 52px;
+  height: 52px;
+  background: rgba(26,39,68,.06);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--navy);
+  transition: background .2s, color .2s;
+}
+
+.project-card:hover .project-card__icon {
+  background: var(--gold);
+  color: var(--white);
+}
+
+.project-card__icon svg { width: 26px; height: 26px; }
+
+.project-card h3 {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+/* ─── Trust Bar ────────────────────────────────────────────────────────── */
+.trust {
+  background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%);
+  padding: 64px 0;
+}
+
+.trust__title {
+  text-align: center;
+  color: var(--white);
+  font-size: clamp(1.3rem, 2.5vw, 1.7rem);
+  font-weight: 800;
+  margin-bottom: 40px;
+}
+
+.trust__grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 24px;
+}
+
+.trust__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.trust__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(232,93,26,.12);
+  border: 1px solid rgba(232,93,26,.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+  flex-shrink: 0;
+}
+
+.trust__icon svg { width: 22px; height: 22px; }
+
+.trust__item p {
+  color: rgba(255,255,255,.82);
+  font-size: .88rem;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
 /* ─── Steps ────────────────────────────────────────────────────────────── */
@@ -879,6 +1001,8 @@ ul { list-style: none; }
   .services__grid { grid-template-columns: repeat(2, 1fr); }
   .for-pe__inner  { grid-template-columns: 1fr; gap: 48px; }
   .contact__inner { grid-template-columns: 1fr; gap: 48px; }
+  .project-types__grid { grid-template-columns: repeat(2, 1fr); }
+  .trust__grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 768px) {
@@ -922,6 +1046,8 @@ ul { list-style: none; }
 
   .services__grid  { grid-template-columns: 1fr; }
   .about__values   { grid-template-columns: 1fr; }
+  .project-types__grid { grid-template-columns: 1fr; }
+  .trust__grid { grid-template-columns: repeat(2, 1fr); }
   .footer__inner   { grid-template-columns: 1fr; gap: 36px; }
   .footer__cols    { grid-template-columns: repeat(2, 1fr); }
 
