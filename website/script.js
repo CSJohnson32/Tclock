@@ -71,10 +71,11 @@
       const nextIndex = (activeIndex + 1) % heroVideos.length;
       const next = heroVideos[nextIndex];
 
-      next.currentTime = 0;
-      next.play().catch(function () {});
-      next.classList.add('is-active');
       current.classList.remove('is-active');
+      next.classList.add('is-active');
+
+      try { next.currentTime = 0; } catch (err) {}
+      next.play().catch(function () {});
 
       activeIndex = nextIndex;
     }, 7000);
