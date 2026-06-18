@@ -1,15 +1,15 @@
 /* ─── Custom properties ─────────────────────────────────────────────────── */
 :root {
-  --navy:       #1e2633;
-  --navy-dark:  #13181f;
-  --navy-mid:   #27313f;
-  --gold:       #e85d1a;
-  --gold-light: #f07040;
-  --light:      #f4f5f7;
+  --navy:       #2c2c2c;
+  --navy-dark:  #1f1f1f;
+  --navy-mid:   #383838;
+  --gold:       #e85d26;
+  --gold-light: #f07a4a;
+  --light:      #f5f2ed;
   --white:      #ffffff;
-  --text:       #1a202c;
-  --text-muted: #6b7280;
-  --border:     #e2e6ea;
+  --text:       #2c2c2c;
+  --text-muted: #6e6e6a;
+  --border:     #e2ddd4;
 
   --radius:    10px;
   --shadow-sm: 0 1px 4px rgba(0,0,0,.08);
@@ -64,7 +64,7 @@ ul { list-style: none; }
 
 .section__tag {
   display: inline-block;
-  background: rgba(26,39,68,.08);
+  background: rgba(44,44,44,.08);
   color: var(--navy);
   font-size: .75rem;
   font-weight: 700;
@@ -76,7 +76,7 @@ ul { list-style: none; }
 
 .section__tag--gold {
   background: rgba(232,93,26,.12);
-  color: #c94a0e;
+  color: #c54f20;
 }
 
 /* ─── Buttons ──────────────────────────────────────────────────────────── */
@@ -192,7 +192,7 @@ ul { list-style: none; }
 
 /* ─── Hero ─────────────────────────────────────────────────────────────── */
 .hero {
-  background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 60%, #1e3a6e 100%);
+  background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 60%, var(--navy-mid) 100%);
   padding-top: calc(var(--nav-h) + 80px);
   padding-bottom: 0;
   position: relative;
@@ -232,7 +232,7 @@ ul { list-style: none; }
 .hero__overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(19,24,31,.90) 0%, rgba(26,39,68,.85) 60%, rgba(30,58,110,.72) 100%);
+  background: linear-gradient(135deg, rgba(31,31,31,.90) 0%, rgba(44,44,44,.85) 60%, rgba(56,56,56,.72) 100%);
 }
 
 @media (max-width: 768px) {
@@ -258,7 +258,7 @@ ul { list-style: none; }
 
 .hero__tag {
   display: inline-block;
-  background: rgba(201,169,78,.15);
+  background: rgba(232,93,38,.15);
   color: var(--gold);
   font-size: .75rem;
   font-weight: 700;
@@ -400,7 +400,7 @@ ul { list-style: none; }
 .project-card__icon {
   width: 38px;
   height: 38px;
-  background: rgba(26,39,68,.06);
+  background: rgba(44,44,44,.06);
   border-radius: 9px;
   display: flex;
   align-items: center;
@@ -556,7 +556,7 @@ ul { list-style: none; }
 .service-card__icon {
   width: 44px;
   height: 44px;
-  background: rgba(26,39,68,.06);
+  background: rgba(44,44,44,.06);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -774,7 +774,7 @@ ul { list-style: none; }
 .value__icon {
   width: 40px;
   height: 40px;
-  background: rgba(26,39,68,.06);
+  background: rgba(44,44,44,.06);
   border-radius: 10px;
   display: flex;
   align-items: center;
