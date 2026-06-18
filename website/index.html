@@ -40,6 +40,18 @@
 
   <!-- ── Hero ── -->
   <section class="hero" id="home">
+    <div class="hero__bg" aria-hidden="true">
+      <video class="hero__video is-active" autoplay muted loop playsinline preload="auto">
+        <source src="videos/hero-1.mp4" type="video/mp4" />
+      </video>
+      <video class="hero__video" muted loop playsinline preload="none">
+        <source src="videos/hero-2.mp4" type="video/mp4" />
+      </video>
+      <video class="hero__video" muted loop playsinline preload="none">
+        <source src="videos/hero-3.mp4" type="video/mp4" />
+      </video>
+      <div class="hero__overlay"></div>
+    </div>
     <div class="container hero__inner">
       <div class="hero__text fade-in">
         <div class="hero__tag">Professional Engineering Network</div>
@@ -49,57 +61,6 @@
           <a href="#contact" class="btn btn--primary">Start Your Project</a>
         </div>
         <a href="engineers.html" class="hero__link">Join the Team</a>
-      </div>
-      <div class="hero__graphic fade-in delay-1">
-        <svg viewBox="0 0 440 380" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <!-- Grid lines -->
-          <line x1="0" y1="60" x2="440" y2="60" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1"/>
-          <line x1="0" y1="130" x2="440" y2="130" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1"/>
-          <line x1="0" y1="200" x2="440" y2="200" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1"/>
-          <line x1="0" y1="270" x2="440" y2="270" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1"/>
-          <line x1="70" y1="0" x2="70" y2="380" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1"/>
-          <line x1="160" y1="0" x2="160" y2="380" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1"/>
-          <line x1="250" y1="0" x2="250" y2="380" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1"/>
-          <line x1="340" y1="0" x2="340" y2="380" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1"/>
-
-          <!-- Network connection lines -->
-          <line x1="220" y1="190" x2="100" y2="100" stroke="#e85d1a" stroke-opacity="0.5" stroke-width="1.5" stroke-dasharray="6 4"/>
-          <line x1="220" y1="190" x2="340" y2="100" stroke="#e85d1a" stroke-opacity="0.5" stroke-width="1.5" stroke-dasharray="6 4"/>
-          <line x1="220" y1="190" x2="100" y2="290" stroke="#e85d1a" stroke-opacity="0.5" stroke-width="1.5" stroke-dasharray="6 4"/>
-          <line x1="220" y1="190" x2="340" y2="290" stroke="#e85d1a" stroke-opacity="0.5" stroke-width="1.5" stroke-dasharray="6 4"/>
-          <line x1="100" y1="100" x2="340" y2="100" stroke="#e85d1a" stroke-opacity="0.25" stroke-width="1" stroke-dasharray="4 6"/>
-          <line x1="100" y1="290" x2="340" y2="290" stroke="#e85d1a" stroke-opacity="0.25" stroke-width="1" stroke-dasharray="4 6"/>
-
-          <!-- Center node — PE badge -->
-          <circle cx="220" cy="190" r="52" fill="#e85d1a" fill-opacity="0.15" stroke="#e85d1a" stroke-width="2"/>
-          <circle cx="220" cy="190" r="38" fill="#1a2744"/>
-          <text x="220" y="183" text-anchor="middle" fill="#e85d1a" font-size="13" font-weight="700" letter-spacing="1" font-family="system-ui,sans-serif">LICENSED</text>
-          <text x="220" y="200" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="800" font-family="system-ui,sans-serif">PE</text>
-          <text x="220" y="214" text-anchor="middle" fill="#e85d1a" font-size="10" letter-spacing="0.5" font-family="system-ui,sans-serif">NETWORK</text>
-
-          <!-- Satellite nodes -->
-          <circle cx="100" cy="100" r="30" fill="#1f3260" stroke="#e85d1a" stroke-width="1.5"/>
-          <text x="100" y="96" text-anchor="middle" fill="#e85d1a" font-size="9" font-weight="600" font-family="system-ui,sans-serif">CIVIL</text>
-          <text x="100" y="108" text-anchor="middle" fill="#ffffff" font-size="9" font-family="system-ui,sans-serif">ENG</text>
-
-          <circle cx="340" cy="100" r="30" fill="#1f3260" stroke="#e85d1a" stroke-width="1.5"/>
-          <text x="340" y="96" text-anchor="middle" fill="#e85d1a" font-size="9" font-weight="600" font-family="system-ui,sans-serif">STRUCT</text>
-          <text x="340" y="108" text-anchor="middle" fill="#ffffff" font-size="9" font-family="system-ui,sans-serif">ENG</text>
-
-          <circle cx="100" cy="290" r="30" fill="#1f3260" stroke="#e85d1a" stroke-width="1.5"/>
-          <text x="100" y="286" text-anchor="middle" fill="#e85d1a" font-size="9" font-weight="600" font-family="system-ui,sans-serif">ELEC</text>
-          <text x="100" y="298" text-anchor="middle" fill="#ffffff" font-size="9" font-family="system-ui,sans-serif">ENG</text>
-
-          <circle cx="340" cy="290" r="30" fill="#1f3260" stroke="#e85d1a" stroke-width="1.5"/>
-          <text x="340" y="286" text-anchor="middle" fill="#e85d1a" font-size="9" font-weight="600" font-family="system-ui,sans-serif">MECH</text>
-          <text x="340" y="298" text-anchor="middle" fill="#ffffff" font-size="9" font-family="system-ui,sans-serif">ENG</text>
-
-          <!-- Accent dots -->
-          <circle cx="220" cy="60" r="4" fill="#e85d1a" fill-opacity="0.5"/>
-          <circle cx="220" cy="320" r="4" fill="#e85d1a" fill-opacity="0.5"/>
-          <circle cx="40" cy="190" r="4" fill="#e85d1a" fill-opacity="0.5"/>
-          <circle cx="400" cy="190" r="4" fill="#e85d1a" fill-opacity="0.5"/>
-        </svg>
       </div>
     </div>
     <div class="hero__wave">

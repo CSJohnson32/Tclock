@@ -59,6 +59,27 @@
     fadeEls.forEach(function (el) { el.classList.add('visible'); });
   }
 
+  /* ── Hero video slideshow ── */
+  const heroVideos = document.querySelectorAll('.hero__video');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (heroVideos.length > 1 && !reducedMotion) {
+    let activeIndex = 0;
+
+    setInterval(function () {
+      const current = heroVideos[activeIndex];
+      const nextIndex = (activeIndex + 1) % heroVideos.length;
+      const next = heroVideos[nextIndex];
+
+      next.currentTime = 0;
+      next.play().catch(function () {});
+      next.classList.add('is-active');
+      current.classList.remove('is-active');
+
+      activeIndex = nextIndex;
+    }, 7000);
+  }
+
   /* ── Mobile toggle button animation ── */
   const style = document.createElement('style');
   style.textContent = `
