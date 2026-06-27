@@ -605,27 +605,6 @@ ul { list-style: none; }
   margin-top: 12px;
 }
 
-.founder__mission {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border);
-}
-
-.founder__mission h4 {
-  font-size: .85rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  color: var(--gold);
-  margin-bottom: 8px;
-}
-
-.founder__mission p {
-  font-size: .96rem;
-  color: var(--text-muted);
-  line-height: 1.7;
-}
-
 /* ─── Final CTA ────────────────────────────────────────────────────────── */
 .cta-final {
   background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%);

@@ -140,25 +140,4 @@
     });
   }
 
-  /* ── Smooth active nav highlight ── */
-  const sections = document.querySelectorAll('section[id], div[id]');
-  const navLinks  = document.querySelectorAll('.nav__menu a[href^="#"]');
-
-  function setActiveLink() {
-    let current = '';
-    sections.forEach(function (section) {
-      if (window.scrollY >= section.offsetTop - 100) {
-        current = section.id;
-      }
-    });
-
-    navLinks.forEach(function (link) {
-      link.style.color = link.getAttribute('href') === '#' + current
-        ? 'var(--gold)'
-        : '';
-    });
-  }
-
-  window.addEventListener('scroll', setActiveLink, { passive: true });
-
 })();

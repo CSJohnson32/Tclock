@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About | Enginuity LLC</title>
+  <meta name="description" content="Enginuity's mission, vision, founder, and the standards and values behind our network of licensed Architecture, Engineering, and Construction professionals." />
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-LGD4RXTGQ8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-LGD4RXTGQ8');
+  </script>
+  <style>
+    .about-hero__inner {
+      max-width: 640px;
+      margin: 0 auto;
+      text-align: center;
+      padding: calc(var(--nav-h) + 80px) 24px 80px;
+    }
+
+    .mv-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .mv-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 32px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .mv-card h3 {
+      font-size: .85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--gold);
+      margin-bottom: 12px;
+    }
+
+    .mv-card p {
+      color: var(--text-muted);
+      font-size: .98rem;
+      line-height: 1.75;
+    }
+
+    .quality-content {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .quality-content p {
+      color: var(--text-muted);
+      font-size: 1.02rem;
+      line-height: 1.8;
+    }
+
+    .values__grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+
+    .value-card {
+      padding: 28px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--white);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .value-card__icon {
+      width: 40px;
+      height: 40px;
+      background: rgba(26,39,68,.06);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--navy);
+      margin-bottom: 16px;
+    }
+
+    .value-card__icon svg { width: 20px; height: 20px; }
+
+    .value-card h4 {
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 8px;
+    }
+
+    .value-card p {
+      font-size: .87rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    @media (max-width: 768px) {
+      .mv-grid     { grid-template-columns: 1fr; }
+      .values__grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 480px) {
+      .values__grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <header class="nav" id="nav">
+    <div class="container nav__inner">
+      <a href="index.html" class="nav__logo">
+        <span class="logo-e">Engi</span><span class="logo-p">nuity</span>
+      </a>
+      <button class="nav__toggle" id="navToggle" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav__menu" id="navMenu">
+        <a href="index.html">Home</a>
+        <a href="services.html">Services</a>
+        <a href="engineers.html">Join the Network</a>
+        <a href="about.html">About</a>
+        <a href="contact.html" class="btn btn--nav">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ── Hero ── -->
+  <section class="hero">
+    <div class="about-hero__inner fade-in">
+      <div class="hero__tag">About Enginuity</div>
+      <h1>Built on Trust,<br />Driven by Standards</h1>
+      <p class="hero__sub">Why we exist, what we stand for, and the person behind the network.</p>
+    </div>
+    <div class="hero__wave">
+      <svg viewBox="0 0 1440 72" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        <path d="M0,36 C480,72 960,0 1440,36 L1440,72 L0,72 Z" fill="#f5f7fa"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ── Mission & Vision ── -->
+  <section class="section">
+    <div class="container">
+      <div class="section__header fade-in">
+        <h2>Mission &amp; Vision</h2>
+      </div>
+      <div class="mv-grid fade-in">
+        <div class="mv-card">
+          <h3>Mission</h3>
+          <p>To give every client direct access to the right expertise — without the limits of a single firm's capabilities — by connecting them with a growing network of licensed, vetted professionals committed to quality, responsiveness, and accountability.</p>
+        </div>
+        <div class="mv-card">
+          <h3>Vision</h3>
+          <p>A future where finding the right Architecture, Engineering, or Construction professional is as simple as describing the project — where clients are never limited by one firm's bandwidth or specialty, and licensed professionals have the freedom to do their best work on their own terms.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Meet the Founder ── -->
+  <section class="section bg-light" id="founder">
+    <div class="container">
+      <div class="section__header fade-in">
+        <h2>Meet the Founder</h2>
+      </div>
+      <div class="founder fade-in">
+        <div class="founder__photo">
+          <img src="images/founder.png" alt="Carter Johnson, PE — Founder of Enginuity LLC" />
+        </div>
+        <div class="founder__bio">
+          <h3>Carter Johnson, PE</h3>
+          <p class="founder__title">Founder / Principal Engineer</p>
+          <p>Carter Johnson, PE is a licensed Professional Engineer with experience in transportation, civil infrastructure, structural design, water resources, and construction engineering. Throughout his career, Carter recognized a common challenge: finding the right expertise often meant calling multiple firms, waiting weeks for responses, or settling for whoever happened to be available — so he created Enginuity to make that process simpler.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Why Enginuity Exists ── -->
+  <section class="trust" id="why-enginuity">
+    <div class="container fade-in">
+      <h2 class="trust__title">Why Enginuity Exists</h2>
+      <div class="trust__grid">
+        <div class="trust__item">
+          <div class="trust__icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="6" cy="6" r="2.4" stroke="currentColor" stroke-width="1.6"/>
+              <circle cx="18" cy="6" r="2.4" stroke="currentColor" stroke-width="1.6"/>
+              <circle cx="12" cy="18" r="2.4" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M8 7l3 9M16 7l-3 9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <p>Not Limited to One Firm's Expertise</p>
+        </div>
+        <div class="trust__item">
+          <div class="trust__icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l2.39 4.84 5.34.78-3.86 3.76.91 5.32L12 14.27l-4.78 2.43.91-5.32L4.27 7.62l5.34-.78L12 2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          </div>
+          <p>Licensed Professionals</p>
+        </div>
+        <div class="trust__item">
+          <div class="trust__icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 10a9 9 0 1118 0c0 5-9 12-9 12S3 15 3 10z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="1.6"/></svg>
+          </div>
+          <p>Vetted Network</p>
+        </div>
+        <div class="trust__item">
+          <div class="trust__icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          </div>
+          <p>Fast Matching</p>
+        </div>
+        <div class="trust__item">
+          <div class="trust__icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 5h16v10H9l-4 4V5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          </div>
+          <p>Direct Communication</p>
+        </div>
+        <div class="trust__item">
+          <div class="trust__icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </div>
+          <p>Quality Standards</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Quality Standards ── -->
+  <section class="section" id="quality-standards">
+    <div class="container">
+      <div class="section__header fade-in">
+        <h2>Quality Standards</h2>
+      </div>
+      <div class="quality-content fade-in">
+        <p>Every professional in the Enginuity network is vetted before joining — license verification, reference checks, and a review of past work. Once accepted, members are held to consistent standards for scope, communication, and deliverables, so the quality you receive never depends on which professional happens to be available. It's the same rigor you'd expect from a single trusted firm, applied consistently across every discipline in our network.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Core Values ── -->
+  <section class="section bg-light" id="core-values">
+    <div class="container">
+      <div class="section__header fade-in">
+        <h2>Core Values</h2>
+      </div>
+      <div class="values__grid fade-in">
+        <div class="value-card">
+          <div class="value-card__icon">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 4l11 4v8c0 7-5 11-11 13C10 27 5 23 5 16V8l11-4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+              <path d="M11 16l3.5 3.5L21 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h4>Integrity</h4>
+          <p>We do what we say we'll do, and stand behind every deliverable — no surprises, no excuses.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-card__icon">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="12" r="7" stroke="currentColor" stroke-width="2"/>
+              <path d="M11 18l-2 10 7-4 7 4-2-10" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h4>Accountability</h4>
+          <p>Every project is backed by a licensed professional who takes ownership of the outcome, start to finish.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-card__icon">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17 3L7 17h7l-1 12 12-16h-8l1-10z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h4>Responsiveness</h4>
+          <p>Direct communication and fast turnarounds, without layers of bureaucracy slowing things down.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-card__icon">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 8a5 5 0 00-7 7l-9 9 3 3 9-9a5 5 0 007-7l-3.5 3.5-3-3L21 8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h4>Craftsmanship</h4>
+          <p>Quality work, done right the first time — engineering and design you can trust your name to.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Final CTA ── -->
+  <section class="section cta-final">
+    <div class="container cta-final__inner fade-in">
+      <h2>Start Your Project</h2>
+      <p>Tell us what you need and we'll match you with the right professional — fast.</p>
+      <a href="contact.html" class="btn btn--primary btn--lg">Start Your Project</a>
+    </div>
+  </section>
+
+  <!-- ── Footer ── -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <a href="index.html" class="nav__logo">
+          <span class="logo-e">Engi</span><span class="logo-p">nuity</span>
+        </a>
+        <p>Connecting clients with vetted Architecture, Engineering, and Construction professionals.</p>
+      </div>
+      <div class="footer__cols">
+        <div class="footer__col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="services.html">Services</a></li>
+            <li><a href="engineers.html">Join the Network</a></li>
+            <li><a href="about.html">About</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Contact</h4>
+          <ul>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="mailto:info@eng-pros.com">info@eng-pros.com</a></li>
+            <li><a href="https://eng-pros.com" target="_blank" rel="noopener">eng-pros.com</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <div class="container">
+        <p>&copy; 2024 Enginuity LLC. All rights reserved.</p>
+        <p>Professional Engineering Network | eng-pros.com</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
