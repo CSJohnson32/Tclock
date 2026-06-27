@@ -91,14 +91,6 @@
   `;
   document.head.appendChild(style);
 
-  /* ── Project type card → pre-fill contact form ── */
-  document.querySelectorAll('.project-card[data-service]').forEach(function (card) {
-    card.addEventListener('click', function () {
-      const select = document.getElementById('service');
-      if (select) select.value = card.dataset.service;
-    });
-  });
-
   /* ── Contact form ── */
   const form    = document.getElementById('contactForm');
   const success = document.getElementById('formSuccess');

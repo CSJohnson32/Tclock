@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contact | Enginuity LLC</title>
+  <meta name="description" content="Tell Enginuity about your project and we'll match you with a vetted Architecture, Engineering, or Construction professional who fits your scope, location, and timeline." />
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-LGD4RXTGQ8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-LGD4RXTGQ8');
+  </script>
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <header class="nav" id="nav">
+    <div class="container nav__inner">
+      <a href="index.html" class="nav__logo">
+        <span class="logo-e">Engi</span><span class="logo-p">nuity</span>
+      </a>
+      <button class="nav__toggle" id="navToggle" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav__menu" id="navMenu">
+        <a href="index.html#how-it-works">How It Works</a>
+        <a href="index.html#project-types">Project Types</a>
+        <a href="index.html#why-enginuity">Why Enginuity</a>
+        <a href="index.html#founder">Meet the Founder</a>
+        <a href="contact.html" class="btn btn--nav">Get Started</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ── Contact ── -->
+  <section class="section contact" style="padding-top: calc(var(--nav-h) + 80px);">
+    <div class="container contact__inner">
+      <div class="contact__text fade-in">
+        <h2>Start Your Project</h2>
+        <p>Tell us about your project and we'll match you with a vetted professional who fits your scope, location, and timeline.</p>
+        <div class="contact__info">
+          <div class="contact__info-item">
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" fill="currentColor"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" fill="currentColor"/></svg>
+            <a href="mailto:info@eng-pros.com">info@eng-pros.com</a>
+          </div>
+          <div class="contact__info-item">
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4.083 9h1.946c.089-1.546.383-2.97.837-4.118A6.004 6.004 0 004.083 9zm.412 2H4.083a6.004 6.004 0 002.783 4.118C6.396 13.97 6.102 12.546 6.013 11H4.495zM10 16c-.098 0-.195-.003-.29-.007L9.706 16H10c.293 0 .584-.015.87-.047A7.999 7.999 0 0010 16zm1.904-.765a6.96 6.96 0 00.396-.235A6.007 6.007 0 0014.917 11H13.4a12.82 12.82 0 01-.612 3.06 7.01 7.01 0 01-.884.175zM13.4 9h1.517a6.004 6.004 0 00-2.783-4.118C12.617 6.03 12.91 7.454 13 9h.4zM11.586 4.187a7 7 0 00-3.172 0C7.957 5.012 7.64 6.468 7.548 8h4.904c-.092-1.532-.41-2.988-.866-3.813zM7.548 10c.092 1.532.41 2.988.866 3.813a7 7 0 003.172 0c.456-.825.774-2.281.866-3.813H7.548z" fill="currentColor" clip-rule="evenodd"/></svg>
+            <a href="https://eng-pros.com" target="_blank" rel="noopener">eng-pros.com</a>
+          </div>
+        </div>
+      </div>
+      <form class="contact__form fade-in delay-1" id="contactForm" novalidate>
+        <input type="hidden" name="_subject" value="New Client Inquiry — Enginuity LLC" />
+        <input type="hidden" name="_next" value="" />
+        <div class="form__row">
+          <div class="form__field">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" placeholder="Your full name" required />
+          </div>
+          <div class="form__field">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="you@example.com" required />
+          </div>
+        </div>
+        <div class="form__row">
+          <div class="form__field">
+            <label for="service">Project Type</label>
+            <select id="service" name="service" required>
+              <option value="">Select a project type...</option>
+              <option value="structural-design">Structural Design</option>
+              <option value="civil-engineering">Civil Engineering</option>
+              <option value="surveying">Surveying</option>
+              <option value="water-resources">Water Resources</option>
+              <option value="permitting">Permitting</option>
+              <option value="retaining-walls">Retaining Walls</option>
+              <option value="site-development">Site Development</option>
+              <option value="construction-support">Construction Support</option>
+              <option value="other">Not sure yet / Other</option>
+            </select>
+          </div>
+          <div class="form__field">
+            <label for="company">Company / Organization (optional)</label>
+            <input type="text" id="company" name="company" placeholder="Your company name" />
+          </div>
+        </div>
+        <div class="form__field">
+          <label for="message">Project Description</label>
+          <textarea id="message" name="message" rows="4" placeholder="Tell us about your project — scope, location, and timeline..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn--primary btn--full">Send Message</button>
+        <p class="form__success" id="formSuccess" hidden>Thank you! We'll be in touch within one business day.</p>
+        <p class="form__error" id="formError" hidden>Please fill in all required fields.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ── Footer ── -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <a href="index.html" class="nav__logo">
+          <span class="logo-e">Engi</span><span class="logo-p">nuity</span>
+        </a>
+        <p>Connecting clients with vetted Architecture, Engineering, and Construction professionals.</p>
+      </div>
+      <div class="footer__cols">
+        <div class="footer__col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="index.html#how-it-works">How It Works</a></li>
+            <li><a href="index.html#project-types">Project Types</a></li>
+            <li><a href="index.html#why-enginuity">Why Enginuity</a></li>
+            <li><a href="index.html#founder">Meet the Founder</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Contact</h4>
+          <ul>
+            <li><a href="mailto:info@eng-pros.com">info@eng-pros.com</a></li>
+            <li><a href="https://eng-pros.com" target="_blank" rel="noopener">eng-pros.com</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <div class="container">
+        <p>&copy; 2024 Enginuity LLC. All rights reserved.</p>
+        <p>Professional Engineering Network | eng-pros.com</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
