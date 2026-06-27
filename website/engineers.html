@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>For Engineers | Enginuity LLC</title>
-  <meta name="description" content="Licensed Professional Engineers — learn how Enginuity gives you flexible, fairly-compensated project work without the overhead of running your own firm." />
+  <title>Join the Network | Enginuity LLC</title>
+  <meta name="description" content="Licensed Professional Engineers — build your own practice with the backing of an established firm. See how Enginuity's hybrid model compares to a traditional engineering career." />
   <link rel="stylesheet" href="style.css" />
 
   <!-- Google tag (gtag.js) -->
@@ -24,15 +24,20 @@
       padding: calc(var(--nav-h) + 80px) 24px 80px;
     }
 
-    .eng-hero__inner h1 { margin-bottom: 24px; }
+    .eng-hero__inner h1 { margin-bottom: 16px; }
 
-    .eng-hero__inner p {
-      font-size: 1.1rem;
+    .eng-hero__sub {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--gold);
+      margin-bottom: 18px;
+    }
+
+    .eng-hero__inner p.eng-hero__lead {
+      font-size: 1.05rem;
       color: rgba(255,255,255,.75);
       line-height: 1.8;
     }
-
-    .eng-hero__inner p + p { margin-top: 14px; }
 
     .eng-highlight {
       color: var(--gold);
@@ -60,6 +65,12 @@
 
     .eng-content p + p { margin-top: 14px; }
 
+    .eng-content p.eng-callout {
+      color: var(--navy);
+      font-weight: 700;
+      margin-top: 20px;
+    }
+
     .eng-cta {
       background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%);
       padding: 80px 0;
@@ -73,8 +84,133 @@
       margin-bottom: 28px;
     }
 
+    /* ─── Earnings Chart ─────────────────────────────────────────────── */
+    .chart-header {
+      max-width: 680px;
+      margin: 0 auto 36px;
+      text-align: center;
+    }
+
+    .chart-card-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      max-width: 880px;
+      margin: 0 auto 28px;
+    }
+
+    .chart-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .chart-card--highlight {
+      border-color: var(--navy);
+      background: rgba(26,39,68,.04);
+    }
+
+    .chart-card__label {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .chart-card__value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--navy);
+    }
+
+    .chart-card--highlight .chart-card__value { color: var(--gold); }
+
+    .chart-card__sub {
+      font-size: .82rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .chart-slider-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      max-width: 880px;
+      margin: 0 auto 14px;
+    }
+
+    .chart-slider-row label {
+      font-size: .85rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .chart-slider-row input[type="range"] {
+      flex: 1;
+      accent-color: var(--gold);
+    }
+
+    .chart-year-badge {
+      background: var(--navy);
+      color: var(--white);
+      font-size: .82rem;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .chart-wrap {
+      max-width: 880px;
+      margin: 0 auto;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 12px 8px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .chart-wrap svg { width: 100%; height: auto; display: block; }
+
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 10px;
+      font-size: .8rem;
+      color: var(--text-muted);
+    }
+
+    .chart-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chart-legend .swatch {
+      width: 16px;
+      height: 3px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    .chart-footnote {
+      max-width: 720px;
+      margin: 18px auto 0;
+      font-size: .78rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      text-align: center;
+    }
+
     @media (max-width: 768px) {
       .eng-hero__inner { padding-top: calc(var(--nav-h) + 56px); }
+      .chart-card-row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -102,10 +238,10 @@
   <!-- ── Hero ── -->
   <section class="hero">
     <div class="eng-hero__inner fade-in">
-      <div class="hero__tag">For Licensed Professional Engineers</div>
-      <h1>A Better Way<br />to Work</h1>
-      <p>The traditional engineering career path doesn't work for everyone. Heavy workloads, rigid schedules, and limited flexibility have left many talented engineers looking for something different.</p>
-      <p><span class="eng-highlight">Enginuity offers another option.</span></p>
+      <div class="hero__tag">A New Model for Design Professionals</div>
+      <h1>Build Your Career<br />with Enginuity</h1>
+      <p class="eng-hero__sub">The firm model is rigid. Going fully independent is hard. There's a third option.</p>
+      <p class="eng-hero__lead">The traditional engineering career path doesn't work for everyone. Heavy workloads, fixed pay scales, and limited flexibility have left many talented engineers looking for something different — <span class="eng-highlight">Enginuity is that something different.</span></p>
     </div>
     <div class="hero__wave">
       <svg viewBox="0 0 1440 72" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
@@ -114,8 +250,119 @@
     </div>
   </section>
 
-  <!-- ── How It Works ── -->
+  <!-- ── Take Ownership ── -->
   <section class="section bg-light">
+    <div class="container">
+      <div class="eng-content fade-in">
+        <h2>Take Ownership of Your Career — and Earn What You're Worth</h2>
+        <p>Enginuity was built on a simple idea: experienced, licensed engineers should be able to run their own practice without giving up the credibility and support of an established firm.</p>
+        <p>Founded by a Professional Engineer with hands-on experience across transportation, civil infrastructure, structural design, water resources, and construction engineering, Enginuity pairs the trust clients place in a recognized firm with a compensation model built for engineers who want real ownership over their work and their earnings.</p>
+        <p>Most firms still run on a structure built for a different era — fixed salaries, slow promotion tracks, and a hard ceiling on what an engineer can earn no matter how much value they create. For ambitious engineers, that ceiling gets frustrating fast.</p>
+        <p>You don't have to choose between stability and independence. Take on the projects you want, build your own client relationships, and keep more of what you earn — backed by Enginuity's brand, contracts, and professional liability coverage.</p>
+        <p class="eng-callout">Ready to take ownership of your career and earn what you're worth? Let's talk.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Interactive Earnings Chart ── -->
+  <section class="section">
+    <div class="container">
+      <div class="chart-header fade-in">
+        <h2>What Could Your Career Look Like?</h2>
+        <p>Most engineering careers follow a predictable, capped path. Drag the slider to see how a traditional salary compares to Enginuity's hybrid model over a 30-year career.</p>
+      </div>
+
+      <div class="chart-card-row fade-in">
+        <div class="chart-card">
+          <div class="chart-card__label">Traditional Firm</div>
+          <div class="chart-card__value" id="cardTraditionalValue">$76k</div>
+          <div class="chart-card__sub" id="cardTraditionalSub">Earned so far: $76k</div>
+        </div>
+        <div class="chart-card chart-card--highlight">
+          <div class="chart-card__label">Enginuity Hybrid Model</div>
+          <div class="chart-card__value" id="cardHybridValue">$70k</div>
+          <div class="chart-card__sub" id="cardHybridSub">Earned so far: $70k</div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card__label">Annual Difference</div>
+          <div class="chart-card__value" id="cardDiffValue">-$6k</div>
+          <div class="chart-card__sub" id="cardDiffSub">30-yr gap: --</div>
+        </div>
+      </div>
+
+      <div class="chart-slider-row fade-in">
+        <label for="yearSlider">Year into career</label>
+        <input type="range" id="yearSlider" min="1" max="30" value="1" step="1" />
+        <span class="chart-year-badge" id="yearBadge">Year 1</span>
+      </div>
+
+      <div class="chart-wrap fade-in">
+        <svg id="careerChartSvg" viewBox="0 0 760 320" xmlns="http://www.w3.org/2000/svg">
+          <!-- gridlines -->
+          <g stroke="var(--border)" stroke-width="1">
+            <line x1="60" y1="20" x2="60" y2="280" />
+            <line x1="60" y1="280" x2="740" y2="280" />
+            <line x1="60" y1="228" x2="740" y2="228" stroke-dasharray="2 4" />
+            <line x1="60" y1="176" x2="740" y2="176" stroke-dasharray="2 4" />
+            <line x1="60" y1="124" x2="740" y2="124" stroke-dasharray="2 4" />
+            <line x1="60" y1="72"  x2="740" y2="72"  stroke-dasharray="2 4" />
+            <line x1="60" y1="20"  x2="740" y2="20"  stroke-dasharray="2 4" />
+          </g>
+          <!-- y-axis labels -->
+          <g font-size="11" fill="var(--text-muted)" font-family="inherit">
+            <text x="6" y="284">$0</text>
+            <text x="6" y="232">$100k</text>
+            <text x="6" y="180">$200k</text>
+            <text x="6" y="128">$300k</text>
+            <text x="6" y="76">$400k</text>
+            <text x="6" y="24">$500k</text>
+          </g>
+          <!-- x-axis labels -->
+          <g font-size="11" fill="var(--text-muted)" font-family="inherit" text-anchor="middle">
+            <text x="60"  y="298">Yr 1</text>
+            <text x="177" y="298">Yr 5</text>
+            <text x="294" y="298">Yr 10</text>
+            <text x="412" y="298">Yr 15</text>
+            <text x="529" y="298">Yr 20</text>
+            <text x="646" y="298">Yr 25</text>
+            <text x="740" y="298">Yr 30</text>
+          </g>
+          <!-- upside band -->
+          <path id="upsideBand" fill="var(--gold)" fill-opacity="0.12" stroke="none"></path>
+          <!-- traditional firm line -->
+          <path id="traditionalLine" fill="none" stroke="#8a8f9b" stroke-width="2" stroke-dasharray="5 4"></path>
+          <!-- hybrid model line -->
+          <path id="hybridLine" fill="none" stroke="var(--navy)" stroke-width="2.5"></path>
+          <!-- marker -->
+          <line id="markerLine" x1="60" y1="20" x2="60" y2="280" stroke="var(--gold)" stroke-width="1.5" stroke-dasharray="3 3"></line>
+          <circle id="markerDot" cx="60" cy="280" r="5" fill="var(--gold)" stroke="var(--white)" stroke-width="2"></circle>
+        </svg>
+        <div class="chart-legend">
+          <span><span class="swatch" style="background:#8a8f9b;"></span> Traditional firm (career ceiling ~$155k)</span>
+          <span><span class="swatch" style="background:var(--navy);"></span> Enginuity hybrid model (no ceiling)</span>
+          <span><span class="swatch" style="background:var(--gold); opacity:.5;"></span> Hybrid upside range</span>
+        </div>
+      </div>
+
+      <p class="chart-footnote fade-in">Illustrative estimates, not a guarantee of earnings. The traditional-firm curve reflects a typical salaried career progression toward a fixed compensation ceiling. The hybrid model reflects an engineer building their own client base and project volume under the Enginuity model, which has no fixed cap. Individual results will vary based on workload, specialty, and market.</p>
+    </div>
+  </section>
+
+  <!-- ── Our Industry Needs a Change ── -->
+  <section class="section bg-light">
+    <div class="container">
+      <div class="eng-content fade-in">
+        <h2>Our Industry Needs a Change</h2>
+        <p>Licensed engineers spend years earning a degree and a license, then carry real liability on every project they stamp — yet compensation in much of the industry hasn't kept pace with that level of responsibility and skill.</p>
+        <p>That gap is a big part of why so many engineers leave traditional firms within their first decade, whether that means changing industries entirely or striking out on their own.</p>
+        <p>Going independent solves the pay ceiling, but it trades one problem for another. Running a one-person firm means marketing, contracts, insurance, invoicing, and collections — work that has nothing to do with engineering and eats into the hours available for billable, professional work.</p>
+        <p>Enginuity exists to give engineers a better trade-off: the earning upside of independence, without the administrative burden of building a firm from scratch.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── How It Works ── -->
+  <section class="section">
     <div class="container">
       <div class="eng-content fade-in">
         <h2>How It Works</h2>
@@ -126,21 +373,11 @@
   </section>
 
   <!-- ── Connected Network ── -->
-  <section class="section">
+  <section class="section bg-light">
     <div class="container">
       <div class="eng-content fade-in">
         <h2>A Connected Network, Not Just a List of Contractors</h2>
         <p>Beyond project access, Enginuity engineers are part of a professional community. Have a design question or want a second opinion? The network is there to collaborate, discuss, and learn together — something independent consultants often miss.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ── Fair Compensation ── -->
-  <section class="section bg-light">
-    <div class="container">
-      <div class="eng-content fade-in">
-        <h2>Built on Fair Compensation</h2>
-        <p>Enginuity is structured so engineers are rewarded directly for the work they complete, with competitive compensation that reflects their contribution and expertise.</p>
       </div>
     </div>
   </section>

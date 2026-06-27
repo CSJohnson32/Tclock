@@ -140,4 +140,112 @@
     });
   }
 
+  /* ── Career earnings chart ── */
+  const chartSvg = document.getElementById('careerChartSvg');
+
+  if (chartSvg) {
+    const slider       = document.getElementById('yearSlider');
+    const yearBadge     = document.getElementById('yearBadge');
+    const traditionalLine = document.getElementById('traditionalLine');
+    const hybridLine    = document.getElementById('hybridLine');
+    const upsideBand     = document.getElementById('upsideBand');
+    const markerLine     = document.getElementById('markerLine');
+    const markerDot      = document.getElementById('markerDot');
+    const cardTraditionalValue = document.getElementById('cardTraditionalValue');
+    const cardTraditionalSub   = document.getElementById('cardTraditionalSub');
+    const cardHybridValue      = document.getElementById('cardHybridValue');
+    const cardHybridSub        = document.getElementById('cardHybridSub');
+    const cardDiffValue        = document.getElementById('cardDiffValue');
+    const cardDiffSub          = document.getElementById('cardDiffSub');
+
+    const MIN_YEAR = 1;
+    const MAX_YEAR = 30;
+    const PAD_LEFT = 60, PAD_RIGHT = 20, PAD_TOP = 20, PAD_BOTTOM = 40;
+    const PLOT_W = 760 - PAD_LEFT - PAD_RIGHT;
+    const PLOT_H = 320 - PAD_TOP - PAD_BOTTOM;
+    const MAX_SCALE = 500000;
+
+    function traditionalSalary(y) { return 65000 + 90000 * y / (y + 7); }
+    function hybridSalary(y)      { return 62000 + 8000 * y + 70 * y * y; }
+    function hybridLow(y)         { return hybridSalary(y) * 0.75; }
+    function hybridHigh(y)        { return hybridSalary(y) * 1.35; }
+
+    function xForYear(y) {
+      return PAD_LEFT + ((y - MIN_YEAR) / (MAX_YEAR - MIN_YEAR)) * PLOT_W;
+    }
+
+    function yForValue(v) {
+      return PAD_TOP + PLOT_H - Math.min(v, MAX_SCALE) / MAX_SCALE * PLOT_H;
+    }
+
+    function buildLinePath(fn) {
+      const points = [];
+      for (let y = MIN_YEAR; y <= MAX_YEAR; y++) {
+        points.push(xForYear(y) + ',' + yForValue(fn(y)));
+      }
+      return 'M' + points.join(' L');
+    }
+
+    function buildBandPath(lowFn, highFn) {
+      const top = [];
+      const bottom = [];
+      for (let y = MIN_YEAR; y <= MAX_YEAR; y++) {
+        top.push(xForYear(y) + ',' + yForValue(highFn(y)));
+      }
+      for (let y = MAX_YEAR; y >= MIN_YEAR; y--) {
+        bottom.push(xForYear(y) + ',' + yForValue(lowFn(y)));
+      }
+      return 'M' + top.join(' L') + ' L' + bottom.join(' L') + ' Z';
+    }
+
+    function formatCurrency(v) {
+      if (Math.abs(v) >= 1000000) return '$' + (v / 1000000).toFixed(1) + 'M';
+      return '$' + Math.round(v / 1000) + 'k';
+    }
+
+    function formatSignedCurrency(v) {
+      const sign = v < 0 ? '-' : '+';
+      return sign + formatCurrency(Math.abs(v));
+    }
+
+    traditionalLine.setAttribute('d', buildLinePath(traditionalSalary));
+    hybridLine.setAttribute('d', buildLinePath(hybridSalary));
+    upsideBand.setAttribute('d', buildBandPath(hybridLow, hybridHigh));
+
+    function updateChart(year) {
+      const x = xForYear(year);
+      const traditionalValue = traditionalSalary(year);
+      const hybridValue      = hybridSalary(year);
+
+      markerLine.setAttribute('x1', x);
+      markerLine.setAttribute('x2', x);
+      markerDot.setAttribute('cx', x);
+      markerDot.setAttribute('cy', yForValue(hybridValue));
+
+      let traditionalTotal = 0;
+      let hybridTotal       = 0;
+      for (let y = MIN_YEAR; y <= year; y++) {
+        traditionalTotal += traditionalSalary(y);
+        hybridTotal       += hybridSalary(y);
+      }
+
+      yearBadge.textContent = 'Year ' + year;
+      cardTraditionalValue.textContent = formatCurrency(traditionalValue);
+      cardTraditionalSub.textContent   = 'Earned so far: ' + formatCurrency(traditionalTotal);
+      cardHybridValue.textContent      = formatCurrency(hybridValue);
+      cardHybridSub.textContent        = 'Earned so far: ' + formatCurrency(hybridTotal);
+      cardDiffValue.textContent        = formatSignedCurrency(hybridValue - traditionalValue);
+      cardDiffSub.textContent          = '30-yr gap: ' + formatSignedCurrency(
+        (function () {
+          let diff = 0;
+          for (let y = MIN_YEAR; y <= MAX_YEAR; y++) diff += hybridSalary(y) - traditionalSalary(y);
+          return diff;
+        })()
+      );
+    }
+
+    slider.addEventListener('input', function () { updateChart(Number(slider.value)); });
+    updateChart(Number(slider.value));
+  }
+
 })();
