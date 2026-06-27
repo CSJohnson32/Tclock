@@ -862,7 +862,7 @@ ul { list-style: none; }
 @media (max-width: 1024px) {
   .services__grid { grid-template-columns: repeat(2, 1fr); }
   .contact__inner { grid-template-columns: 1fr; gap: 48px; }
-  .project-types__grid { grid-template-columns: repeat(3, 1fr); }
+  .project-types__grid { grid-template-columns: repeat(2, 1fr); }
   .trust__grid { grid-template-columns: repeat(3, 1fr); }
 
   .steps { flex-wrap: wrap; }
