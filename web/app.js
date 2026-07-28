@@ -815,6 +815,7 @@ function renderTimesheets() {
         <span class="ts-entry-time">${e.clockOut ? formatTime(e.clockOut) : '–'}</span>
         <span class="ts-entry-dur">${dur}</span>
         <div class="ts-entry-actions">
+          <button class="ts-btn ts-btn-copy" data-id="${e.id}">Copy</button>
           <button class="ts-btn ts-btn-edit" data-id="${e.id}">Edit</button>
           <button class="ts-btn ts-btn-delete" data-id="${e.id}">Delete</button>
         </div>`;
@@ -823,6 +824,7 @@ function renderTimesheets() {
     list.appendChild(group);
   });
 
+  list.querySelectorAll('.ts-btn-copy').forEach(btn => btn.addEventListener('click', () => copyEntry(btn.dataset.id)));
   list.querySelectorAll('.ts-btn-edit').forEach(btn => btn.addEventListener('click', () => openEditModal(btn.dataset.id)));
   list.querySelectorAll('.ts-btn-delete').forEach(btn => btn.addEventListener('click', () => deleteEntry(btn.dataset.id)));
 }
@@ -869,6 +871,33 @@ function openEditModal(id) {
   document.getElementById('edit-out-time').value = entry.clockOut ? formatTimeInput(entry.clockOut) : '';
   document.getElementById('edit-note').value     = entry.note || '';
   document.getElementById('modal-title').textContent = 'Edit Entry';
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function copyEntry(id) {
+  const src = entries.find(e => e.id === id);
+  if (!src) return;
+
+  // Populate project dropdown
+  const sel = document.getElementById('edit-project');
+  sel.innerHTML = '';
+  projects.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = getProjectLabel(p);
+    sel.appendChild(opt);
+  });
+  sel.value = src.projectId || 'default';
+  populateEditTaskSelect(sel.value, src.taskId || '');
+
+  // Pre-fill all fields from source; user can change date/time as needed
+  document.getElementById('edit-in-date').value  = formatDateInput(src.clockIn);
+  document.getElementById('edit-in-time').value  = formatTimeInput(src.clockIn);
+  document.getElementById('edit-out-date').value = src.clockOut ? formatDateInput(src.clockOut) : formatDateInput(src.clockIn);
+  document.getElementById('edit-out-time').value = src.clockOut ? formatTimeInput(src.clockOut) : '';
+  document.getElementById('edit-note').value     = src.note || '';
+  editingId = null; // null = create new on save
+  document.getElementById('modal-title').textContent = 'Copy Entry';
   document.getElementById('modal-overlay').classList.remove('hidden');
 }
 
