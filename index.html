@@ -1985,6 +1985,7 @@ function setupListeners() {
     const active = document.querySelector('.tab-content.active');
     if (active?.id === 'tab-overview')   renderOverview();
     if (active?.id === 'tab-timesheets') { renderDailySummary(); renderTimesheets(); }
+    if (active?.id === 'tab-projects')   renderProjects();
   });
 
   const unsubS = onSnapshot(sessionRef(), snap => {
@@ -3169,6 +3170,7 @@ function closeProjectForm() {
   editingProjectFormId = null;
   formTasks = [];
   document.getElementById('project-form-card').classList.add('hidden');
+  renderProjects();
 }
 
 async function saveProjectForm() {
