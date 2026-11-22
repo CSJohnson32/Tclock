@@ -405,6 +405,22 @@
     </div>
   </div>
 
+  <!-- Delete Project Modal -->
+  <div id="delete-project-overlay" class="hidden">
+    <div id="delete-project-modal">
+      <h2>Delete Project</h2>
+      <p id="dpm-message"></p>
+      <div class="form-group" id="dpm-move-group">
+        <label>Move entries to</label>
+        <select id="dpm-target-project"></select>
+      </div>
+      <div class="modal-actions">
+        <button id="dpm-cancel" class="btn-secondary">Cancel</button>
+        <button id="dpm-confirm" class="btn-danger">Delete Project</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="app.js"></script>
 </body>
 </html>

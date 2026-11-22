@@ -182,18 +182,66 @@ function entryProject(e) {
 // =====================
 // Project CRUD
 // =====================
-async function deleteProject(id) {
+async function deleteProject(id, targetProjectId = 'default') {
   if (id === 'default') return;
   const batch = writeBatch(db);
   batch.delete(projectRef(id));
   entries.filter(e => (e.projectId || 'default') === id)
-         .forEach(e => batch.set(entryRef(e.id), { ...e, projectId: 'default' }));
+         .forEach(e => batch.set(entryRef(e.id), { ...e, projectId: targetProjectId }));
   await batch.commit();
   if (currentProjectId === id) {
-    currentProjectId = 'default';
-    localStorage.setItem('tclock_currentProject', 'default');
+    currentProjectId = targetProjectId;
+    localStorage.setItem('tclock_currentProject', targetProjectId);
   }
   if (ovProjectId === id) ovProjectId = 'all';
+}
+
+let _deletingProjectId = null;
+
+function confirmDeleteProject(id) {
+  const p = projects.find(x => x.id === id);
+  if (!p) return;
+  _deletingProjectId = id;
+
+  const entryCount = entries.filter(e => (e.projectId || 'default') === id).length;
+  const moveGroup = document.getElementById('dpm-move-group');
+  const msg = document.getElementById('dpm-message');
+
+  if (entryCount === 0) {
+    msg.textContent = `Delete "${p.name}"? This project has no entries.`;
+    moveGroup.classList.add('hidden');
+  } else {
+    msg.innerHTML = `Delete <strong>${escHtml(p.name)}</strong>? It has <strong>${entryCount}</strong> entr${entryCount === 1 ? 'y' : 'ies'} — choose where to move them:`;
+    moveGroup.classList.remove('hidden');
+    const sel = document.getElementById('dpm-target-project');
+    sel.innerHTML = '';
+    projects.filter(x => x.id !== id).forEach(x => {
+      const opt = document.createElement('option');
+      opt.value = x.id;
+      opt.textContent = getProjectLabel(x);
+      if (x.id === 'default') opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+
+  document.getElementById('delete-project-overlay').classList.remove('hidden');
+}
+
+async function executeDeleteProject() {
+  const id = _deletingProjectId;
+  if (!id) return;
+  const entryCount = entries.filter(e => (e.projectId || 'default') === id).length;
+  const targetId = (entryCount > 0)
+    ? document.getElementById('dpm-target-project').value
+    : 'default';
+  document.getElementById('delete-project-overlay').classList.add('hidden');
+  _deletingProjectId = null;
+  await deleteProject(id, targetId);
+}
+
+function cancelDeleteProject() {
+  document.getElementById('delete-project-overlay').classList.add('hidden');
+  _deletingProjectId = null;
 }
 
 // =====================
@@ -480,11 +528,10 @@ function renderPickerList(query) {
 
         const delBtn = li.querySelector('.pp-item-delete');
         if (delBtn) {
-          delBtn.addEventListener('click', async e => {
+          delBtn.addEventListener('click', e => {
             e.stopPropagation();
-            if (confirm(`Delete "${p.name}"? Its entries will move to General.`)) {
-              await deleteProject(p.id);
-            }
+            closeProjectPicker();
+            confirmDeleteProject(p.id);
           });
         }
       }
@@ -1385,12 +1432,10 @@ function renderProjects() {
       list.appendChild(row);
     });
     list.querySelectorAll('.ts-btn-edit').forEach(btn => btn.addEventListener('click', () => openProjectForm(btn.dataset.id)));
-    list.querySelectorAll('.ts-btn-delete').forEach(btn => btn.addEventListener('click', async () => {
+    list.querySelectorAll('.ts-btn-delete').forEach(btn => btn.addEventListener('click', () => {
       const p = projects.find(x => x.id === btn.dataset.id);
       if (!p) return;
-      if (confirm(`Delete "${p.number ? p.number + ' — ' : ''}${p.name}"? Its entries will move to General.`)) {
-        await deleteProject(p.id);
-      }
+      confirmDeleteProject(p.id);
     }));
   }
 
@@ -1601,6 +1646,11 @@ function init() {
   document.getElementById('ts-filter-period').addEventListener('change', renderTimesheets);
   document.getElementById('ts-filter-duration').addEventListener('change', renderTimesheets);
   document.getElementById('ts-filter-project').addEventListener('change', renderTimesheets);
+
+  // Delete project modal
+  document.getElementById('dpm-cancel').addEventListener('click', cancelDeleteProject);
+  document.getElementById('dpm-confirm').addEventListener('click', executeDeleteProject);
+  document.getElementById('delete-project-overlay').addEventListener('click', e => { if (e.target.id === 'delete-project-overlay') cancelDeleteProject(); });
 
   // Modal
   document.getElementById('add-entry-btn').addEventListener('click', openNewEntryModal);
