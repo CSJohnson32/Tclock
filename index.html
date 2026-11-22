@@ -1667,6 +1667,68 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   grid-column: 1 / -1;
 }
 
+/* ===================== */
+/* Overview multi-select */
+/* ===================== */
+.ov-filter-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); background: var(--bg);
+  color: var(--text); cursor: pointer; font-size: 14px;
+  font-weight: 500; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.ov-filter-btn:hover { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(59,130,246,.12); }
+
+.ov-filter-dropdown {
+  position: absolute; top: calc(100% + 4px); left: 0;
+  min-width: 220px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow-lg); z-index: 200;
+  padding: 6px 0; max-height: 300px; overflow-y: auto;
+}
+.ov-filter-item {
+  display: flex; align-items: center;
+  padding: 7px 14px; cursor: pointer; font-size: 13px;
+  transition: background 0.1s; user-select: none;
+}
+.ov-filter-item:hover { background: var(--surface-alt); }
+.ov-filter-item input[type="checkbox"] { margin-right: 6px; flex-shrink: 0; }
+.ov-filter-sep { height: 1px; background: var(--border); margin: 4px 0; }
+
+/* ======================== */
+/* Project sections layout  */
+/* ======================== */
+.proj-section { margin-bottom: 24px; }
+.proj-section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--text-muted);
+  padding-bottom: 8px; margin-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Project type badge */
+.proj-list-type {
+  font-size: 11px; color: var(--text-muted);
+  background: var(--surface-alt); border: 1px solid var(--border);
+  border-radius: 10px; padding: 2px 8px; white-space: nowrap;
+}
+
+/* Archive / Unarchive buttons */
+.ts-btn-archive  { background: var(--surface-alt); color: var(--text-muted); }
+.ts-btn-archive:hover  { background: #f59e0b; color: #fff; }
+.ts-btn-unarchive { background: var(--surface-alt); color: var(--text-muted); }
+.ts-btn-unarchive:hover { background: var(--success); color: #fff; }
+
+/* Archived project row */
+.proj-list-row-archived { opacity: 0.75; }
+
+/* Type form card */
+#type-form-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+}
+
 </style>
 </head>
 <body>
@@ -1855,7 +1917,13 @@ input[type="time"]::-webkit-calendar-picker-indicator {
         </div>
 
         <!-- Project filter -->
-        <select id="overview-project-filter" class="ov-project-select"></select>
+        <div id="ov-filter-wrap" style="position:relative;margin-bottom:20px">
+          <button type="button" id="ov-filter-btn" class="ov-filter-btn">
+            <span id="ov-filter-label">All Projects</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div id="ov-filter-dropdown" class="ov-filter-dropdown hidden"></div>
+        </div>
 
         <div id="overview-stats">
           <div class="stat-card">
@@ -1904,6 +1972,11 @@ input[type="time"]::-webkit-calendar-picker-indicator {
         <div id="overview-top-projects">
           <h2>Top Projects</h2>
           <div id="projects-bar-chart"></div>
+        </div>
+
+        <div id="overview-type-breakdown" class="hidden">
+          <h2>By Type</h2>
+          <div id="type-bar-chart"></div>
         </div>
 
         <div id="overview-recent">
@@ -1984,11 +2057,11 @@ input[type="time"]::-webkit-calendar-picker-indicator {
         <div id="project-form-card" class="hidden">
           <h2 id="project-form-title">New Project</h2>
           <div class="form-row">
-            <div class="form-group">
+            <div id="pf-number-group" class="form-group">
               <label>Project Number</label>
               <input type="text" id="pf-number" placeholder="TR25556.00" maxlength="30" />
             </div>
-            <div class="form-group" style="flex:0 0 auto">
+            <div id="pf-color-group" class="form-group" style="flex:0 0 auto">
               <label>Color</label>
               <button type="button" class="color-chip-btn" id="pf-color-btn">
                 <span class="color-chip" id="pf-color-preview" style="background:#3b82f6"></span>
@@ -1998,18 +2071,27 @@ input[type="time"]::-webkit-calendar-picker-indicator {
             </div>
           </div>
           <div class="form-group">
+            <label>Project Type <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label>
+            <select id="pf-type">
+              <option value="">— No Type —</option>
+            </select>
+          </div>
+          <div id="pf-type-color-note" style="display:none;font-size:13px;color:var(--text-muted);margin-bottom:12px;padding:6px 10px;background:var(--surface-alt);border-radius:var(--radius-sm);border:1px solid var(--border)"></div>
+          <div class="form-group">
             <label>Project Name</label>
             <input type="text" id="pf-name" placeholder="SR-132 Imprv MP 38.1 to Nebo Loop Rd CEM" maxlength="120" />
           </div>
           <!-- Per-project task setup -->
-          <div class="form-group">
-            <label>Tasks for this project</label>
-            <div id="pf-task-list"></div>
-          </div>
-          <div class="pf-custom-task-row">
-            <input type="text" id="pf-task-code" placeholder="Code (e.g. 99C)" maxlength="10" />
-            <input type="text" id="pf-task-name" placeholder="Custom task name" maxlength="80" />
-            <button id="pf-add-task-btn" class="btn-secondary btn-sm">+ Add Custom</button>
+          <div id="pf-tasks-group">
+            <div class="form-group">
+              <label>Tasks for this project</label>
+              <div id="pf-task-list"></div>
+            </div>
+            <div class="pf-custom-task-row">
+              <input type="text" id="pf-task-code" placeholder="Code (e.g. 99C)" maxlength="10" />
+              <input type="text" id="pf-task-name" placeholder="Custom task name" maxlength="80" />
+              <button id="pf-add-task-btn" class="btn-secondary btn-sm">+ Add Custom</button>
+            </div>
           </div>
 
           <div class="modal-actions">
@@ -2018,12 +2100,57 @@ input[type="time"]::-webkit-calendar-picker-indicator {
           </div>
         </div>
 
-        <!-- Project list -->
-        <div id="project-list-section">
+        <!-- General project -->
+        <div class="proj-section">
+          <div class="proj-section-header"><span>General Project</span></div>
+          <div id="general-project-row"></div>
+        </div>
+
+        <!-- Project Types -->
+        <div class="proj-section">
+          <div class="proj-section-header">
+            <span>Project Types</span>
+            <button id="add-type-btn" class="btn-secondary btn-sm">+ Add Type</button>
+          </div>
+          <div id="type-form-card" class="hidden" style="margin-bottom:12px">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Type Name</label>
+                <input type="text" id="tf-name" placeholder="e.g. CEM, Overhead, Design" maxlength="60" />
+              </div>
+              <div class="form-group" style="flex:0 0 auto">
+                <label>Color</label>
+                <button type="button" class="color-chip-btn" id="tf-color-btn">
+                  <span class="color-chip" id="tf-color-preview" style="background:#3b82f6"></span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <input type="color" id="tf-color" value="#3b82f6" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none" />
+              </div>
+            </div>
+            <div class="modal-actions">
+              <button id="tf-cancel" class="btn-secondary">Cancel</button>
+              <button id="tf-save" class="btn-primary">Save Type</button>
+            </div>
+          </div>
+          <div id="type-list"></div>
+        </div>
+
+        <!-- Active project list -->
+        <div id="project-list-section" class="proj-section">
+          <div class="proj-section-header"><span>Active Projects</span></div>
           <div id="project-list"></div>
           <div id="project-list-empty" class="empty-state hidden">
             <p>No projects yet. Click "+ Add Project" to get started.</p>
           </div>
+        </div>
+
+        <!-- Archived projects -->
+        <div id="archived-section" class="proj-section hidden">
+          <div class="proj-section-header proj-section-toggle" id="archived-toggle" style="cursor:pointer">
+            <span>Archived Projects</span>
+            <svg id="archived-toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div id="archived-list" class="hidden"></div>
         </div>
       </section>
 
@@ -2159,7 +2286,9 @@ let isDark           = false;
 let currentProjectId = 'default';
 let currentTaskId    = '';
 let tcWindow         = 'day';
-let ovProjectId      = 'all';
+let ovProjectIds     = ['all'];
+let ovMultiOpen      = false;
+let types            = [];
 let editingId        = null;
 let currentUser      = null;
 let unsubscribers    = [];
@@ -2173,6 +2302,8 @@ const projectsCol = () => collection(db, 'users', currentUser.uid, 'projects');
 const entryRef    = id => doc(db, 'users', currentUser.uid, 'entries', id);
 const projectRef  = id => doc(db, 'users', currentUser.uid, 'projects', id);
 const sessionRef  = () => doc(db, 'users', currentUser.uid, 'meta', 'session');
+const typesCol    = () => collection(db, 'users', currentUser.uid, 'types');
+const typeRef     = id => doc(db, 'users', currentUser.uid, 'types', id);
 
 // =====================
 // Firestore Listeners
@@ -2188,8 +2319,10 @@ function setupListeners() {
   });
 
   const unsubP = onSnapshot(projectsCol(), snap => {
-    const custom = snap.docs.map(d => d.data());
-    projects = [DEFAULT_PROJECT, ...custom.sort((a, b) => a.name.localeCompare(b.name))];
+    const all = snap.docs.map(d => d.data());
+    const defaultOverride = all.find(p => p.id === 'default');
+    const custom = all.filter(p => p.id !== 'default').sort((a, b) => a.name.localeCompare(b.name));
+    projects = [(defaultOverride || DEFAULT_PROJECT), ...custom];
     rebuildTaskSelector();
     renderTimeCard();
     rebuildOverviewFilter();
@@ -2197,6 +2330,7 @@ function setupListeners() {
     const active = document.querySelector('.tab-content.active');
     if (active?.id === 'tab-overview')   renderOverview();
     if (active?.id === 'tab-timesheets') { renderDailySummary(); renderTimesheets(); }
+    if (active?.id === 'tab-projects')   renderProjects();
   });
 
   const unsubS = onSnapshot(sessionRef(), snap => {
@@ -2204,7 +2338,16 @@ function setupListeners() {
     renderTimeCard();
   });
 
-  unsubscribers = [unsubE, unsubP, unsubS];
+  const unsubT = onSnapshot(typesCol(), snap => {
+    types = snap.docs.map(d => d.data()).sort((a, b) => a.name.localeCompare(b.name));
+    rebuildOverviewFilter();
+    renderTimeCard();
+    const active = document.querySelector('.tab-content.active');
+    if (active?.id === 'tab-overview')   renderOverview();
+    if (active?.id === 'tab-projects')   renderProjects();
+  });
+
+  unsubscribers = [unsubE, unsubP, unsubS, unsubT];
 }
 
 function teardownListeners() {
@@ -2213,6 +2356,7 @@ function teardownListeners() {
   entries = [];
   projects = [DEFAULT_PROJECT];
   activeSession = null;
+  types = [];
 }
 
 // =====================
@@ -2265,6 +2409,19 @@ function entryProject(e) {
   return getProjectById(e.projectId || 'default');
 }
 
+function getTypeById(id) {
+  return id ? types.find(t => t.id === id) || null : null;
+}
+
+function getProjectColor(proj) {
+  if (!proj) return '#3b82f6';
+  if (proj.typeId) {
+    const t = getTypeById(proj.typeId);
+    if (t) return t.color;
+  }
+  return proj.color || '#3b82f6';
+}
+
 // =====================
 // Project CRUD
 // =====================
@@ -2279,7 +2436,8 @@ async function deleteProject(id, targetProjectId = 'default') {
     currentProjectId = targetProjectId;
     localStorage.setItem('tclock_currentProject', targetProjectId);
   }
-  if (ovProjectId === id) ovProjectId = 'all';
+  ovProjectIds = ovProjectIds.filter(x => x !== id);
+  if (ovProjectIds.length === 0) ovProjectIds = ['all'];
 }
 
 let _deletingProjectId = null;
@@ -2301,7 +2459,7 @@ function confirmDeleteProject(id) {
     moveGroup.classList.remove('hidden');
     const sel = document.getElementById('dpm-target-project');
     sel.innerHTML = '';
-    projects.filter(x => x.id !== id).forEach(x => {
+    projects.filter(x => x.id !== id && !x.archived).forEach(x => {
       const opt = document.createElement('option');
       opt.value = x.id;
       opt.textContent = getProjectLabel(x);
@@ -2328,6 +2486,25 @@ async function executeDeleteProject() {
 function cancelDeleteProject() {
   document.getElementById('delete-project-overlay').classList.add('hidden');
   _deletingProjectId = null;
+}
+
+async function archiveProject(id) {
+  if (id === 'default') return;
+  const p = getProjectById(id);
+  if (!p) return;
+  await setDoc(projectRef(id), { ...p, archived: true });
+  if (currentProjectId === id) {
+    currentProjectId = 'default';
+    localStorage.setItem('tclock_currentProject', 'default');
+  }
+  ovProjectIds = ovProjectIds.filter(x => x !== id);
+  if (ovProjectIds.length === 0) ovProjectIds = ['all'];
+}
+
+async function unarchiveProject(id) {
+  const p = getProjectById(id);
+  if (!p) return;
+  await setDoc(projectRef(id), { ...p, archived: false });
 }
 
 // =====================
@@ -2545,7 +2722,7 @@ function renderPickerList(query) {
   ul.innerHTML = '';
   const q = query.toLowerCase();
   projects
-    .filter(p => p.name.toLowerCase().includes(q))
+    .filter(p => !p.archived && p.name.toLowerCase().includes(q))
     .forEach(p => {
       const li = document.createElement('li');
 
@@ -2589,7 +2766,7 @@ function renderPickerList(query) {
         // Normal view
         li.className = 'pp-item' + (p.id === currentProjectId ? ' active' : '');
         li.innerHTML = `
-          <span class="project-dot" style="background:${p.color}"></span>
+          <span class="project-dot" style="background:${getProjectColor(p)}"></span>
           <span class="pp-item-name">${escHtml(getProjectLabel(p))}</span>
           ${p.id !== 'default' ? `
             <div class="pp-item-actions">
@@ -2725,7 +2902,7 @@ function renderTimeCard() {
 
   // Update project selector button
   const proj = getProjectById(currentProjectId);
-  document.getElementById('ps-dot').style.background = proj.color;
+  document.getElementById('ps-dot').style.background = getProjectColor(proj);
   document.getElementById('ps-name').textContent = getProjectLabel(proj);
 
   // Date display
@@ -2739,17 +2916,68 @@ function renderTimeCard() {
 // Render: Overview
 // =====================
 function rebuildOverviewFilter() {
-  const sel = document.getElementById('overview-project-filter');
-  sel.innerHTML = '<option value="all">All Projects</option>';
-  projects.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.id;
-    opt.textContent = p.name;
-    sel.appendChild(opt);
+  const label = document.getElementById('ov-filter-label');
+  if (!label) return;
+  const activeProjects = projects.filter(p => !p.archived);
+  if (ovProjectIds.includes('all') || ovProjectIds.length === 0) {
+    ovProjectIds = ['all'];
+    label.textContent = 'All Projects';
+  } else if (ovProjectIds.length === 1) {
+    const p = getProjectById(ovProjectIds[0]);
+    label.textContent = p?.name || 'All Projects';
+  } else {
+    label.textContent = `${ovProjectIds.length} projects`;
+  }
+  const dropdown = document.getElementById('ov-filter-dropdown');
+  if (!dropdown || dropdown.classList.contains('hidden')) return;
+  buildOvFilterDropdown(dropdown, activeProjects);
+}
+
+function buildOvFilterDropdown(dropdown, activeProjects) {
+  dropdown.innerHTML = '';
+  const allItem = document.createElement('label');
+  allItem.className = 'ov-filter-item';
+  const allCheck = document.createElement('input');
+  allCheck.type = 'checkbox';
+  allCheck.checked = ovProjectIds.includes('all');
+  allCheck.addEventListener('change', () => {
+    ovProjectIds = ['all'];
+    rebuildOverviewFilter();
+    renderOverview();
   });
-  const valid = ovProjectId === 'all' || projects.some(p => p.id === ovProjectId);
-  sel.value = valid ? ovProjectId : 'all';
-  ovProjectId = sel.value;
+  allItem.append(allCheck, ' All Projects');
+  dropdown.appendChild(allItem);
+
+  if (activeProjects.length > 0) {
+    const sep = document.createElement('div');
+    sep.className = 'ov-filter-sep';
+    dropdown.appendChild(sep);
+    activeProjects.forEach(p => {
+      const item = document.createElement('label');
+      item.className = 'ov-filter-item';
+      const check = document.createElement('input');
+      check.type = 'checkbox';
+      check.checked = ovProjectIds.includes('all') || ovProjectIds.includes(p.id);
+      check.addEventListener('change', () => {
+        if (check.checked) {
+          ovProjectIds = ovProjectIds.filter(x => x !== 'all');
+          if (!ovProjectIds.includes(p.id)) ovProjectIds.push(p.id);
+        } else {
+          ovProjectIds = ovProjectIds.filter(x => x !== p.id);
+          if (ovProjectIds.length === 0) ovProjectIds = ['all'];
+        }
+        const allChecked = activeProjects.every(ap => ovProjectIds.includes(ap.id));
+        if (allChecked) ovProjectIds = ['all'];
+        rebuildOverviewFilter();
+        renderOverview();
+      });
+      const dot = document.createElement('span');
+      dot.className = 'project-dot';
+      dot.style.cssText = `background:${getProjectColor(p)};flex-shrink:0;margin-left:4px;`;
+      item.append(check, dot, ' ' + p.name);
+      dropdown.appendChild(item);
+    });
+  }
 }
 
 function renderOverview() {
@@ -2760,14 +2988,14 @@ function renderOverview() {
   const monthStart = startOfMonth(now);
 
   function filteredEntries(ents) {
-    if (ovProjectId === 'all') return ents;
-    return ents.filter(e => (e.projectId || 'default') === ovProjectId);
+    if (ovProjectIds.includes('all')) return ents;
+    return ents.filter(e => ovProjectIds.includes(e.projectId || 'default'));
   }
 
   function sessionMs(rangeStart, rangeEnd) {
     if (!activeSession) return 0;
     if (activeSession.clockIn < rangeStart || activeSession.clockIn >= rangeEnd) return 0;
-    if (ovProjectId !== 'all' && (activeSession.projectId || 'default') !== ovProjectId) return 0;
+    if (!ovProjectIds.includes('all') && !ovProjectIds.includes(activeSession.projectId || 'default')) return 0;
     return now - activeSession.clockIn;
   }
 
@@ -2798,7 +3026,7 @@ function renderOverview() {
     const ents = filteredEntries(inRange(ds, de));
     let ms = totalMs(ents);
     if (activeSession && activeSession.clockIn >= ds && activeSession.clockIn < de) {
-      if (ovProjectId === 'all' || (activeSession.projectId||'default') === ovProjectId) {
+      if (ovProjectIds.includes('all') || ovProjectIds.includes(activeSession.projectId||'default')) {
         ms += now - activeSession.clockIn;
       }
     }
@@ -2840,15 +3068,54 @@ function renderOverview() {
       row.className = 'proj-bar-row';
       row.innerHTML = `
         <div class="proj-bar-name">
-          <span class="project-dot project-dot-lg" style="background:${proj.color}"></span>
+          <span class="project-dot project-dot-lg" style="background:${getProjectColor(proj)}"></span>
           <span>${escHtml(proj.name)}</span>
         </div>
         <div class="proj-bar-track">
-          <div class="proj-bar-fill" style="width:${(ms/maxMs)*100}%;background:${proj.color}"></div>
+          <div class="proj-bar-fill" style="width:${(ms/maxMs)*100}%;background:${getProjectColor(proj)}"></div>
         </div>
         <div class="proj-bar-dur">${formatDuration(ms)}</div>`;
       chart.appendChild(row);
     });
+  }
+
+  // By Type chart
+  const typeBreakdown = document.getElementById('overview-type-breakdown');
+  if (typeBreakdown) {
+    const typedProjIds = new Set(projects.filter(p => p.typeId && !p.archived).map(p => p.id));
+    if (types.length > 0 && typedProjIds.size > 0) {
+      typeBreakdown.classList.remove('hidden');
+      const typeChart = document.getElementById('type-bar-chart');
+      typeChart.innerHTML = '';
+      const typeTotals = types.map(t => {
+        const pIds = projects.filter(p => p.typeId === t.id).map(p => p.id);
+        const ents = entries.filter(e => pIds.includes(e.projectId || 'default'));
+        let ms = totalMs(ents);
+        if (activeSession && pIds.includes(activeSession.projectId || 'default')) ms += now - activeSession.clockIn;
+        return { type: t, ms };
+      }).filter(x => x.ms > 0).sort((a, b) => b.ms - a.ms);
+      if (typeTotals.length > 0) {
+        const maxMs = typeTotals[0].ms;
+        typeTotals.forEach(({ type, ms }) => {
+          const row = document.createElement('div');
+          row.className = 'proj-bar-row';
+          row.innerHTML = `
+            <div class="proj-bar-name">
+              <span class="project-dot project-dot-lg" style="background:${type.color}"></span>
+              <span>${escHtml(type.name)}</span>
+            </div>
+            <div class="proj-bar-track">
+              <div class="proj-bar-fill" style="width:${(ms/maxMs)*100}%;background:${type.color}"></div>
+            </div>
+            <div class="proj-bar-dur">${formatDuration(ms)}</div>`;
+          typeChart.appendChild(row);
+        });
+      } else {
+        typeBreakdown.classList.add('hidden');
+      }
+    } else {
+      typeBreakdown.classList.add('hidden');
+    }
   }
 
   // Recent entries
@@ -2865,7 +3132,7 @@ function renderOverview() {
       div.className = 'recent-entry';
       div.innerHTML = `
         <span class="recent-entry-project">
-          <span class="project-dot" style="background:${proj.color}"></span>
+          <span class="project-dot" style="background:${getProjectColor(proj)}"></span>
           <span>${escHtml(proj.name)} · ${formatDate(e.clockIn)}</span>
         </span>
         <span class="recent-entry-time">${formatTime(e.clockIn)} – ${e.clockOut ? formatTime(e.clockOut) : '…'}</span>
@@ -2882,12 +3149,25 @@ function rebuildTsProjectFilter() {
   const sel = document.getElementById('ts-filter-project');
   const prev = sel.value;
   sel.innerHTML = '<option value="all">All Projects</option>';
-  projects.forEach(p => {
+  const active   = projects.filter(p => !p.archived);
+  const archived = projects.filter(p => p.archived);
+  active.forEach(p => {
     const opt = document.createElement('option');
     opt.value = p.id;
     opt.textContent = p.name;
     sel.appendChild(opt);
   });
+  if (archived.length > 0) {
+    const grp = document.createElement('optgroup');
+    grp.label = 'Archived';
+    archived.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name;
+      grp.appendChild(opt);
+    });
+    sel.appendChild(grp);
+  }
   sel.value = prev || 'all';
 }
 
@@ -2954,7 +3234,7 @@ function renderTimesheets() {
       const entTask = getTaskById(e.taskId || '');
       row.innerHTML = `
         <span class="ts-entry-project">
-          <span class="project-dot" style="background:${proj.color}"></span>
+          <span class="project-dot" style="background:${getProjectColor(proj)}"></span>
           <span class="ts-entry-project-name">${escHtml(getProjectLabel(proj))}${entTask ? ' · ' + escHtml(entTask.code) : ''}</span>
         </span>
         <span class="ts-entry-time">${formatTime(e.clockIn)}</span>
@@ -3183,7 +3463,7 @@ function renderDailySummary() {
     const taskLabel = task ? `${task.code} — ${task.name}` : '(no task)';
     row.innerHTML = `
       <span class="ds-project">
-        <span class="project-dot" style="background:${proj.color}"></span>
+        <span class="project-dot" style="background:${getProjectColor(proj)}"></span>
         <span><strong>${escHtml(projLabel)}</strong> · ${escHtml(taskLabel)}</span>
       </span>
       <span class="ds-actual">${formatDuration(ms)}</span>
@@ -3495,52 +3775,179 @@ function renderTaskFormSection() {
 }
 
 function renderProjects() {
-  // Project list
+  // General project section
+  const generalRow = document.getElementById('general-project-row');
+  if (generalRow) {
+    const defProj = getProjectById('default');
+    generalRow.innerHTML = `
+      <div class="proj-list-row">
+        <span class="project-dot project-dot-lg" style="background:${getProjectColor(defProj)}"></span>
+        <span class="proj-list-name">${escHtml(defProj.name)}</span>
+        <span class="proj-list-type" style="color:var(--text-muted);font-size:12px">Default fallback project</span>
+        <div class="proj-list-actions">
+          <button class="ts-btn ts-btn-edit" id="edit-general-btn">Edit</button>
+        </div>
+      </div>`;
+    document.getElementById('edit-general-btn')?.addEventListener('click', () => openProjectForm('default'));
+  }
+
+  // Types section
+  renderTypesSection();
+
+  // Active + Archived project lists
+  const activeProjects   = projects.filter(p => p.id !== 'default' && !p.archived);
+  const archivedProjects = projects.filter(p => p.id !== 'default' && p.archived);
+
   const list  = document.getElementById('project-list');
   const empty = document.getElementById('project-list-empty');
-  const customProjects = projects.filter(p => p.id !== 'default');
   list.innerHTML = '';
-  if (customProjects.length === 0) {
+
+  if (activeProjects.length === 0) {
     empty.classList.remove('hidden');
   } else {
     empty.classList.add('hidden');
-    customProjects.forEach(p => {
+    activeProjects.forEach(p => {
+      const typeName = p.typeId ? (getTypeById(p.typeId)?.name || '') : '';
       const row = document.createElement('div');
       row.className = 'proj-list-row';
       row.innerHTML = `
-        <span class="project-dot project-dot-lg" style="background:${p.color}"></span>
+        <span class="project-dot project-dot-lg" style="background:${getProjectColor(p)}"></span>
         <span class="proj-list-number">${escHtml(p.number || '')}</span>
         <span class="proj-list-name">${escHtml(p.name)}</span>
+        ${typeName ? `<span class="proj-list-type">${escHtml(typeName)}</span>` : ''}
         <div class="proj-list-actions">
           <button class="ts-btn ts-btn-edit" data-id="${p.id}">Edit</button>
+          <button class="ts-btn ts-btn-archive" data-id="${p.id}">Archive</button>
           <button class="ts-btn ts-btn-delete" data-id="${p.id}">Delete</button>
         </div>`;
       list.appendChild(row);
     });
     list.querySelectorAll('.ts-btn-edit').forEach(btn => btn.addEventListener('click', () => openProjectForm(btn.dataset.id)));
-    list.querySelectorAll('.ts-btn-delete').forEach(btn => btn.addEventListener('click', () => {
-      const p = projects.find(x => x.id === btn.dataset.id);
-      if (!p) return;
-      confirmDeleteProject(p.id);
+    list.querySelectorAll('.ts-btn-archive').forEach(btn => btn.addEventListener('click', async () => {
+      const p = getProjectById(btn.dataset.id);
+      if (p && confirm(`Archive "${p.name}"? It will be hidden from active lists but its data is preserved.`)) {
+        await archiveProject(btn.dataset.id);
+      }
     }));
+    list.querySelectorAll('.ts-btn-delete').forEach(btn => btn.addEventListener('click', () => confirmDeleteProject(btn.dataset.id)));
   }
 
+  // Archived section
+  const archivedSection = document.getElementById('archived-section');
+  const archivedList    = document.getElementById('archived-list');
+  if (archivedSection && archivedList) {
+    archivedList.innerHTML = '';
+    if (archivedProjects.length === 0) {
+      archivedSection.classList.add('hidden');
+    } else {
+      archivedSection.classList.remove('hidden');
+      archivedProjects.forEach(p => {
+        const row = document.createElement('div');
+        row.className = 'proj-list-row proj-list-row-archived';
+        row.innerHTML = `
+          <span class="project-dot project-dot-lg" style="background:${getProjectColor(p)};opacity:0.5"></span>
+          <span class="proj-list-number" style="opacity:0.6">${escHtml(p.number || '')}</span>
+          <span class="proj-list-name" style="opacity:0.6">${escHtml(p.name)}</span>
+          <div class="proj-list-actions">
+            <button class="ts-btn ts-btn-edit" data-id="${p.id}">Edit</button>
+            <button class="ts-btn ts-btn-unarchive" data-id="${p.id}">Unarchive</button>
+            <button class="ts-btn ts-btn-delete" data-id="${p.id}">Delete</button>
+          </div>`;
+        archivedList.appendChild(row);
+      });
+      archivedList.querySelectorAll('.ts-btn-edit').forEach(btn => btn.addEventListener('click', () => openProjectForm(btn.dataset.id)));
+      archivedList.querySelectorAll('.ts-btn-unarchive').forEach(btn => btn.addEventListener('click', () => unarchiveProject(btn.dataset.id)));
+      archivedList.querySelectorAll('.ts-btn-delete').forEach(btn => btn.addEventListener('click', () => confirmDeleteProject(btn.dataset.id)));
+    }
+  }
+}
+
+function renderTypesSection() {
+  const list = document.getElementById('type-list');
+  if (!list) return;
+  list.innerHTML = '';
+  if (types.length === 0) {
+    list.innerHTML = '<p style="font-size:13px;color:var(--text-muted);padding:6px 0 10px">No types yet. Types let you group projects with a shared color.</p>';
+    return;
+  }
+  types.forEach(t => {
+    const count = projects.filter(p => p.typeId === t.id).length;
+    const row = document.createElement('div');
+    row.className = 'proj-list-row';
+    row.innerHTML = `
+      <span class="project-dot project-dot-lg" style="background:${t.color}"></span>
+      <span class="proj-list-name">${escHtml(t.name)}</span>
+      <span class="proj-list-type">${count} project${count === 1 ? '' : 's'}</span>
+      <div class="proj-list-actions">
+        <button class="ts-btn ts-btn-edit" data-id="${t.id}">Edit</button>
+        <button class="ts-btn ts-btn-delete" data-id="${t.id}">Delete</button>
+      </div>`;
+    list.appendChild(row);
+  });
+  list.querySelectorAll('.ts-btn-edit').forEach(btn => btn.addEventListener('click', () => openTypeForm(btn.dataset.id)));
+  list.querySelectorAll('.ts-btn-delete').forEach(btn => btn.addEventListener('click', () => deleteType(btn.dataset.id)));
 }
 
 function openProjectForm(id) {
   editingProjectFormId = id || null;
   const p = id ? projects.find(x => x.id === id) : null;
   formTasks = p?.tasks ? [...p.tasks] : [];
-  document.getElementById('project-form-title').textContent = p ? 'Edit Project' : 'New Project';
+  document.getElementById('project-form-title').textContent = p
+    ? (id === 'default' ? 'Edit General Project' : 'Edit Project')
+    : 'New Project';
   document.getElementById('pf-number').value = p?.number || '';
   document.getElementById('pf-name').value   = p?.name   || '';
   document.getElementById('pf-color').value  = p?.color  || '#3b82f6';
   updateChipPreview(document.getElementById('pf-color'));
+
+  // Type dropdown
+  const typeSel = document.getElementById('pf-type');
+  if (typeSel) {
+    typeSel.innerHTML = '<option value="">— No Type —</option>';
+    types.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = t.name;
+      if (t.id === (p?.typeId || '')) opt.selected = true;
+      typeSel.appendChild(opt);
+    });
+    updateProjectFormColorVisibility(typeSel.value, p?.color);
+  }
+
+  // Show/hide number and tasks for 'default' project
+  const numGroup   = document.getElementById('pf-number-group');
+  const tasksGroup = document.getElementById('pf-tasks-group');
+  if (numGroup)   numGroup.classList.toggle('hidden', id === 'default');
+  if (tasksGroup) tasksGroup.classList.toggle('hidden', id === 'default');
+
   document.getElementById('pf-task-code').value = '';
   document.getElementById('pf-task-name').value = '';
   document.getElementById('project-form-card').classList.remove('hidden');
   renderTaskFormSection();
-  document.getElementById('pf-number').focus();
+  document.getElementById('pf-name').focus();
+}
+
+function updateProjectFormColorVisibility(typeId, projectColor) {
+  const colorGroup    = document.getElementById('pf-color-group');
+  const typeColorNote = document.getElementById('pf-type-color-note');
+  if (!colorGroup) return;
+  if (typeId) {
+    const t = getTypeById(typeId);
+    colorGroup.classList.add('hidden');
+    if (typeColorNote && t) {
+      typeColorNote.style.display = '';
+      typeColorNote.innerHTML = `Color: <span class="color-chip" style="background:${t.color};width:14px;height:14px;vertical-align:middle;border-radius:3px;display:inline-block;margin-right:4px"></span><strong>${escHtml(t.name)}</strong> type color`;
+    } else if (typeColorNote) {
+      typeColorNote.style.display = 'none';
+    }
+  } else {
+    colorGroup.classList.remove('hidden');
+    if (typeColorNote) typeColorNote.style.display = 'none';
+    if (projectColor) {
+      document.getElementById('pf-color').value = projectColor;
+      updateChipPreview(document.getElementById('pf-color'));
+    }
+  }
 }
 
 function closeProjectForm() {
@@ -3549,18 +3956,72 @@ function closeProjectForm() {
   document.getElementById('project-form-card').classList.add('hidden');
 }
 
+// =====================
+// Type CRUD
+// =====================
+let editingTypeId = null;
+
+function openTypeForm(id) {
+  editingTypeId = id || null;
+  const t = id ? types.find(x => x.id === id) : null;
+  document.getElementById('tf-name').value  = t?.name  || '';
+  document.getElementById('tf-color').value = t?.color || PALETTE[types.length % PALETTE.length];
+  updateChipPreview(document.getElementById('tf-color'));
+  document.getElementById('type-form-card').classList.remove('hidden');
+  document.getElementById('tf-name').focus();
+}
+
+function closeTypeForm() {
+  editingTypeId = null;
+  document.getElementById('type-form-card').classList.add('hidden');
+}
+
+async function saveTypeForm() {
+  const name  = document.getElementById('tf-name').value.trim();
+  const color = document.getElementById('tf-color').value;
+  if (!name) { document.getElementById('tf-name').focus(); return; }
+  if (editingTypeId) {
+    const t = types.find(x => x.id === editingTypeId);
+    if (t) await setDoc(typeRef(t.id), { ...t, name, color });
+  } else {
+    const id = 'ty_' + Date.now().toString(36);
+    await setDoc(typeRef(id), { id, name, color });
+  }
+  closeTypeForm();
+}
+
+async function deleteType(id) {
+  const t = types.find(x => x.id === id);
+  if (!t) return;
+  const count = projects.filter(p => p.typeId === id).length;
+  const msg = count > 0
+    ? `Delete type "${t.name}"? ${count} project${count === 1 ? '' : 's'} will keep their stored colors.`
+    : `Delete type "${t.name}"?`;
+  if (!confirm(msg)) return;
+  const batch = writeBatch(db);
+  batch.delete(typeRef(id));
+  projects.filter(p => p.typeId === id && p.id !== 'default').forEach(p => {
+    batch.set(projectRef(p.id), { ...p, typeId: '' });
+  });
+  await batch.commit();
+}
+
 async function saveProjectForm() {
   const number = document.getElementById('pf-number').value.trim();
   const name   = document.getElementById('pf-name').value.trim();
   const color  = document.getElementById('pf-color').value;
+  const typeId = (document.getElementById('pf-type')?.value) || '';
   if (!name) { document.getElementById('pf-name').focus(); return; }
   const tasks = [...formTasks];
-  if (editingProjectFormId) {
+
+  if (editingProjectFormId === 'default') {
+    await setDoc(projectRef('default'), { id: 'default', name, color, tasks: [] });
+  } else if (editingProjectFormId) {
     const p = projects.find(x => x.id === editingProjectFormId);
-    if (p) await setDoc(projectRef(p.id), { ...p, number, name, color, tasks });
+    if (p) await setDoc(projectRef(p.id), { ...p, number, name, color, typeId, tasks });
   } else {
     const id = 'p_' + Date.now().toString(36);
-    await setDoc(projectRef(id), { id, number, name, color, tasks });
+    await setDoc(projectRef(id), { id, number, name, color, typeId, tasks });
   }
   closeProjectForm();
 }
@@ -3652,12 +4113,33 @@ function init() {
   // Color picker popover
   document.getElementById('pf-color-btn').addEventListener('click', e => { e.stopPropagation(); openColorPopover('pf-color', e.currentTarget); });
   document.getElementById('pp-new-color-btn').addEventListener('click', e => { e.stopPropagation(); openColorPopover('pp-new-color', e.currentTarget); });
+  document.getElementById('tf-color-btn')?.addEventListener('click', e => { e.stopPropagation(); openColorPopover('tf-color', e.currentTarget); });
 
   // Projects page
   document.getElementById('add-project-btn').addEventListener('click', () => openProjectForm(null));
   document.getElementById('pf-cancel').addEventListener('click', closeProjectForm);
   document.getElementById('pf-save').addEventListener('click', saveProjectForm);
   document.getElementById('pf-name').addEventListener('keydown', e => { if (e.key === 'Enter') saveProjectForm(); });
+  document.getElementById('pf-type')?.addEventListener('change', e => {
+    const p = editingProjectFormId ? projects.find(x => x.id === editingProjectFormId) : null;
+    updateProjectFormColorVisibility(e.target.value, p?.color || '#3b82f6');
+  });
+
+  // Type form
+  document.getElementById('add-type-btn')?.addEventListener('click', () => openTypeForm(null));
+  document.getElementById('tf-cancel')?.addEventListener('click', closeTypeForm);
+  document.getElementById('tf-save')?.addEventListener('click', saveTypeForm);
+  document.getElementById('tf-name')?.addEventListener('keydown', e => { if (e.key === 'Enter') saveTypeForm(); });
+
+  // Archived section toggle
+  document.getElementById('archived-toggle')?.addEventListener('click', () => {
+    const list = document.getElementById('archived-list');
+    const icon = document.getElementById('archived-toggle-icon');
+    if (list) {
+      list.classList.toggle('hidden');
+      if (icon) icon.style.transform = list.classList.contains('hidden') ? '' : 'rotate(180deg)';
+    }
+  });
 
   // Custom task add button inside project form
   document.getElementById('pf-add-task-btn').addEventListener('click', () => {
@@ -3722,10 +4204,23 @@ function init() {
   });
   document.getElementById('ds-copy-btn').addEventListener('click', copyDailySummary);
 
-  // Overview project filter
-  document.getElementById('overview-project-filter').addEventListener('change', e => {
-    ovProjectId = e.target.value;
-    renderOverview();
+  // Overview multi-select filter
+  document.getElementById('ov-filter-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    const dropdown = document.getElementById('ov-filter-dropdown');
+    ovMultiOpen = !ovMultiOpen;
+    dropdown.classList.toggle('hidden', !ovMultiOpen);
+    if (ovMultiOpen) {
+      const activeProjects = projects.filter(p => !p.archived);
+      buildOvFilterDropdown(dropdown, activeProjects);
+    }
+  });
+  document.getElementById('ov-filter-dropdown').addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('click', () => {
+    if (ovMultiOpen) {
+      ovMultiOpen = false;
+      document.getElementById('ov-filter-dropdown')?.classList.add('hidden');
+    }
   });
 
   // Timesheets filters
