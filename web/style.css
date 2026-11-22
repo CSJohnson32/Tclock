@@ -566,9 +566,50 @@ ul { list-style: none; }
 }
 
 /* =============================
+   Color Swatches
+   ============================= */
+.color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.color-swatch:hover { transform: scale(1.2); box-shadow: 0 0 0 2px rgba(0,0,0,.2); }
+
+.color-swatch.selected {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
+}
+
+/* =============================
    Overview
    ============================= */
-#overview-project-filter { margin-bottom: 20px; }
+.ov-project-select {
+  display: block;
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 20px;
+  cursor: pointer;
+  min-width: 160px;
+}
+
+.ov-project-select:focus { outline: none; border-color: var(--accent); }
 
 #overview-stats {
   display: grid;

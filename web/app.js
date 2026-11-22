@@ -511,6 +511,7 @@ function showNewProjectForm() {
   document.getElementById('pp-new-trigger').classList.add('hidden');
   // Pick a color from the palette cycling by current project count
   document.getElementById('pp-new-color').value = PALETTE[projects.length % PALETTE.length];
+  renderColorSwatches('pp-new-color-swatches', 'pp-new-color');
   document.getElementById('pp-new-name').value = '';
   document.getElementById('pp-new-name').focus();
 }
@@ -587,24 +588,17 @@ function renderTimeCard() {
 // Render: Overview
 // =====================
 function rebuildOverviewFilter() {
-  const container = document.getElementById('overview-project-filter');
-  container.innerHTML = '';
-  [{ id: 'all', label: 'All Projects' }, ...projects.map(p => ({ id: p.id, label: p.name, color: p.color }))].forEach(item => {
-    const btn = document.createElement('button');
-    btn.className = 'seg-btn' + (item.id === ovProjectId ? ' active' : '');
-    if (item.color) {
-      btn.innerHTML = `<span class="project-dot" style="background:${item.color};margin-right:5px"></span>${escHtml(item.label)}`;
-    } else {
-      btn.textContent = item.label;
-    }
-    btn.addEventListener('click', () => {
-      ovProjectId = item.id;
-      container.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      renderOverview();
-    });
-    container.appendChild(btn);
+  const sel = document.getElementById('overview-project-filter');
+  sel.innerHTML = '<option value="all">All Projects</option>';
+  projects.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.name;
+    sel.appendChild(opt);
   });
+  const valid = ovProjectId === 'all' || projects.some(p => p.id === ovProjectId);
+  sel.value = valid ? ovProjectId : 'all';
+  ovProjectId = sel.value;
 }
 
 function renderOverview() {
@@ -634,13 +628,14 @@ function renderOverview() {
   const weekMs   = totalMs(weekEnts)   + sessionMs(weekStart, weekStart + 7*86400000);
   const monthMs  = totalMs(monthEnts)  + sessionMs(monthStart, startOfMonth(now + 32*86400000));
 
-  const allFiltered = filteredEntries(entries);
-  const sessionCount = allFiltered.length + (activeSession && (ovProjectId === 'all' || (activeSession.projectId||'default') === ovProjectId) ? 1 : 0);
+  const ytdStart = new Date(new Date(now).getFullYear(), 0, 1).getTime();
+  const ytdEnts  = filteredEntries(inRange(ytdStart, now + 86400000));
+  const ytdMs    = totalMs(ytdEnts) + sessionMs(ytdStart, now + 86400000);
 
-  document.getElementById('stat-today').textContent    = formatDuration(todayMs);
-  document.getElementById('stat-week').textContent     = formatDuration(weekMs);
-  document.getElementById('stat-month').textContent    = formatDuration(monthMs);
-  document.getElementById('stat-sessions').textContent = sessionCount;
+  document.getElementById('stat-today').textContent = formatDuration(todayMs);
+  document.getElementById('stat-week').textContent  = formatDuration(weekMs);
+  document.getElementById('stat-month').textContent = formatDuration(monthMs);
+  document.getElementById('stat-ytd').textContent   = formatDuration(ytdMs);
 
   // Week bar chart
   const weekBars = document.getElementById('week-bars');
@@ -1033,7 +1028,7 @@ function renderDailySummary() {
     totalRounded += rounded;
     const row = document.createElement('div');
     row.className = 'ds-row';
-    const projLabel = proj.number ? `${proj.number}` : proj.name;
+    const projLabel = proj.name;
     const taskLabel = task ? `${task.code} — ${task.name}` : '(no task)';
     row.innerHTML = `
       <span class="ds-project">
@@ -1168,6 +1163,29 @@ function applyTheme(dark) {
 }
 
 // =====================
+// Color Swatches
+// =====================
+function renderColorSwatches(containerId, colorInputId) {
+  const container  = document.getElementById(containerId);
+  const colorInput = document.getElementById(colorInputId);
+  if (!container || !colorInput) return;
+  container.innerHTML = '';
+  PALETTE.forEach(color => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'color-swatch' + (colorInput.value === color ? ' selected' : '');
+    btn.style.background = color;
+    btn.title = color;
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      colorInput.value = color;
+      container.querySelectorAll('.color-swatch').forEach(s => s.classList.toggle('selected', s === btn));
+    });
+    container.appendChild(btn);
+  });
+}
+
+// =====================
 // Escape HTML
 // =====================
 function escHtml(s) {
@@ -1266,6 +1284,7 @@ function openProjectForm(id) {
   document.getElementById('pf-number').value = p?.number || '';
   document.getElementById('pf-name').value   = p?.name   || '';
   document.getElementById('pf-color').value  = p?.color  || '#3b82f6';
+  renderColorSwatches('pf-color-swatches', 'pf-color');
   document.getElementById('pf-task-code').value = '';
   document.getElementById('pf-task-name').value = '';
   document.getElementById('project-form-card').classList.remove('hidden');
@@ -1447,6 +1466,12 @@ function init() {
     dailySummaryDate = formatDateInput(d.getTime()); renderDailySummary();
   });
   document.getElementById('ds-copy-btn').addEventListener('click', copyDailySummary);
+
+  // Overview project filter
+  document.getElementById('overview-project-filter').addEventListener('change', e => {
+    ovProjectId = e.target.value;
+    renderOverview();
+  });
 
   // Timesheets filters
   document.getElementById('ts-filter-period').addEventListener('change', renderTimesheets);
