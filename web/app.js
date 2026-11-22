@@ -45,6 +45,24 @@ const PALETTE = [
   '#84cc16','#14b8a6'
 ];
 
+const COLOR_COLUMNS = [
+  ['#f2f2f2','#d9d9d9','#bfbfbf','#808080','#595959','#262626'],
+  ['#dbe5f1','#b8cce4','#95b3d7','#4472c4','#17375e','#0f243e'],
+  ['#dce6f1','#bdd7ee','#9dc3e6','#2e75b6','#244185','#1f3864'],
+  ['#d2eaf1','#a5d5e3','#78c0d5','#00b0f0','#007ba8','#004f6e'],
+  ['#e2efda','#c6e0b4','#a9d18e','#70ad47','#537035','#375623'],
+  ['#fff2cc','#ffe599','#ffd966','#ffc000','#bf9000','#7f6000'],
+  ['#fce4d6','#f8cbad','#f4b183','#ed7d31','#843c0c','#4d2305'],
+  ['#ffd7d7','#ffb0b0','#ff7777','#ff0000','#c00000','#7b0000'],
+  ['#f8d2e3','#f0a6c7','#e070b0','#c00080','#880058','#600040'],
+  ['#e9d5f0','#d2aadf','#bb80cf','#7030a0','#4f2173','#301248'],
+];
+
+const STANDARD_COLORS = [
+  '#c00000','#ff0000','#ffc000','#ffff00','#92d050',
+  '#00b050','#00b0f0','#0070c0','#002060','#7030a0'
+];
+
 // =====================
 // State
 // =====================
@@ -511,7 +529,7 @@ function showNewProjectForm() {
   document.getElementById('pp-new-trigger').classList.add('hidden');
   // Pick a color from the palette cycling by current project count
   document.getElementById('pp-new-color').value = PALETTE[projects.length % PALETTE.length];
-  renderColorSwatches('pp-new-color-swatches', 'pp-new-color');
+  updateChipPreview(document.getElementById('pp-new-color'));
   document.getElementById('pp-new-name').value = '';
   document.getElementById('pp-new-name').focus();
 }
@@ -1163,25 +1181,127 @@ function applyTheme(dark) {
 }
 
 // =====================
-// Color Swatches
+// Color Picker Popover
 // =====================
-function renderColorSwatches(containerId, colorInputId) {
-  const container  = document.getElementById(containerId);
-  const colorInput = document.getElementById(colorInputId);
-  if (!container || !colorInput) return;
-  container.innerHTML = '';
-  PALETTE.forEach(color => {
+let _cpopTarget = null;
+
+function updateChipPreview(inputEl) {
+  if (!inputEl) return;
+  const preview = document.getElementById(inputEl.id + '-preview');
+  if (preview) preview.style.background = inputEl.value;
+}
+
+function pickColor(color) {
+  if (_cpopTarget) {
+    _cpopTarget.value = color;
+    updateChipPreview(_cpopTarget);
+  }
+  closeColorPopover();
+}
+
+function closeColorPopover() {
+  const p = document.getElementById('color-picker-popover');
+  if (p) p.classList.add('hidden');
+  _cpopTarget = null;
+}
+
+function buildColorPopover() {
+  if (document.getElementById('color-picker-popover')) return;
+  const popover = document.createElement('div');
+  popover.id = 'color-picker-popover';
+  popover.className = 'cpop hidden';
+
+  // Theme grid: 10 cols × 6 rows
+  const gridWrap = document.createElement('div');
+  gridWrap.className = 'cpop-grid';
+  COLOR_COLUMNS.forEach(col => {
+    const colDiv = document.createElement('div');
+    colDiv.className = 'cpop-col';
+    col.forEach(color => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cpop-cell';
+      btn.style.background = color;
+      btn.title = color;
+      btn.addEventListener('click', e => { e.stopPropagation(); pickColor(color); });
+      colDiv.appendChild(btn);
+    });
+    gridWrap.appendChild(colDiv);
+  });
+  popover.appendChild(gridWrap);
+
+  // Standard colors row
+  const stdSection = document.createElement('div');
+  stdSection.className = 'cpop-section';
+  const stdLabel = document.createElement('div');
+  stdLabel.className = 'cpop-label';
+  stdLabel.textContent = 'Standard Colors';
+  const stdRow = document.createElement('div');
+  stdRow.className = 'cpop-std-row';
+  STANDARD_COLORS.forEach(color => {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'color-swatch' + (colorInput.value === color ? ' selected' : '');
+    btn.className = 'cpop-cell';
     btn.style.background = color;
     btn.title = color;
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      colorInput.value = color;
-      container.querySelectorAll('.color-swatch').forEach(s => s.classList.toggle('selected', s === btn));
-    });
-    container.appendChild(btn);
+    btn.addEventListener('click', e => { e.stopPropagation(); pickColor(color); });
+    stdRow.appendChild(btn);
+  });
+  stdSection.appendChild(stdLabel);
+  stdSection.appendChild(stdRow);
+  popover.appendChild(stdSection);
+
+  // More Colors button + hidden native input
+  const moreSection = document.createElement('div');
+  moreSection.className = 'cpop-more-wrap';
+  const customInput = document.createElement('input');
+  customInput.type = 'color';
+  customInput.style.cssText = 'position:absolute;width:0;height:0;opacity:0;pointer-events:none';
+  customInput.addEventListener('change', e => {
+    if (_cpopTarget) {
+      _cpopTarget.value = e.target.value;
+      updateChipPreview(_cpopTarget);
+    }
+    closeColorPopover();
+  });
+  const moreBtn = document.createElement('button');
+  moreBtn.type = 'button';
+  moreBtn.className = 'cpop-more-btn';
+  moreBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg> More Colors…`;
+  moreBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (_cpopTarget) customInput.value = _cpopTarget.value;
+    customInput.click();
+  });
+  moreSection.appendChild(customInput);
+  moreSection.appendChild(moreBtn);
+  popover.appendChild(moreSection);
+
+  document.body.appendChild(popover);
+  popover.addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('click', () => closeColorPopover());
+}
+
+function openColorPopover(targetInputId, anchorEl) {
+  buildColorPopover();
+  _cpopTarget = document.getElementById(targetInputId);
+  const popover = document.getElementById('color-picker-popover');
+  popover.classList.remove('hidden');
+
+  const rect = anchorEl.getBoundingClientRect();
+  const scrollTop  = window.scrollY  || document.documentElement.scrollTop;
+  const scrollLeft = window.scrollX || document.documentElement.scrollLeft;
+  popover.style.top  = (rect.bottom + scrollTop  + 4) + 'px';
+  popover.style.left = (rect.left   + scrollLeft) + 'px';
+
+  requestAnimationFrame(() => {
+    const pr = popover.getBoundingClientRect();
+    if (pr.right > window.innerWidth - 10) {
+      popover.style.left = Math.max(10, window.innerWidth - pr.width - 10) + scrollLeft + 'px';
+    }
+    if (pr.bottom > window.innerHeight - 10) {
+      popover.style.top = (rect.top + scrollTop - pr.height - 4) + 'px';
+    }
   });
 }
 
@@ -1284,7 +1404,7 @@ function openProjectForm(id) {
   document.getElementById('pf-number').value = p?.number || '';
   document.getElementById('pf-name').value   = p?.name   || '';
   document.getElementById('pf-color').value  = p?.color  || '#3b82f6';
-  renderColorSwatches('pf-color-swatches', 'pf-color');
+  updateChipPreview(document.getElementById('pf-color'));
   document.getElementById('pf-task-code').value = '';
   document.getElementById('pf-task-name').value = '';
   document.getElementById('project-form-card').classList.remove('hidden');
@@ -1397,6 +1517,10 @@ function init() {
   document.getElementById('auth-submit').addEventListener('click', handleAuthSubmit);
   document.getElementById('auth-email').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('auth-password').focus(); });
   document.getElementById('auth-password').addEventListener('keydown', e => { if (e.key === 'Enter') handleAuthSubmit(); });
+
+  // Color picker popover
+  document.getElementById('pf-color-btn').addEventListener('click', e => { e.stopPropagation(); openColorPopover('pf-color', e.currentTarget); });
+  document.getElementById('pp-new-color-btn').addEventListener('click', e => { e.stopPropagation(); openColorPopover('pp-new-color', e.currentTarget); });
 
   // Projects page
   document.getElementById('add-project-btn').addEventListener('click', () => openProjectForm(null));

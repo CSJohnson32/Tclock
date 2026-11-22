@@ -121,8 +121,11 @@
               <div id="pp-new-form" class="hidden">
                 <input type="text" id="pp-new-number" placeholder="Project number (e.g. TR25556.00)" maxlength="20" />
                 <input type="text" id="pp-new-name" placeholder="Project name" maxlength="80" />
-                <input type="color" id="pp-new-color" />
-                <div id="pp-new-color-swatches" class="color-swatches" style="width:100%;margin-top:2px"></div>
+                <button type="button" class="color-chip-btn" id="pp-new-color-btn" title="Pick color">
+                  <span class="color-chip" id="pp-new-color-preview"></span>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <input type="color" id="pp-new-color" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none" />
                 <button id="pp-new-confirm" class="btn-primary btn-sm">Add</button>
                 <button id="pp-new-cancel" class="btn-secondary btn-sm">✕</button>
               </div>
@@ -325,8 +328,11 @@
             </div>
             <div class="form-group" style="flex:0 0 auto">
               <label>Color</label>
-              <input type="color" id="pf-color" value="#3b82f6" style="height:38px;width:48px;padding:2px;border-radius:6px;border:1px solid var(--border)" />
-              <div id="pf-color-swatches" class="color-swatches"></div>
+              <button type="button" class="color-chip-btn" id="pf-color-btn">
+                <span class="color-chip" id="pf-color-preview" style="background:#3b82f6"></span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <input type="color" id="pf-color" value="#3b82f6" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none" />
             </div>
           </div>
           <div class="form-group">
